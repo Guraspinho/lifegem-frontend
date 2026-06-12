@@ -101,18 +101,50 @@ apiClient.interceptors.response.use(
   },
 )
 
+/**
+ * Shape of the backend's error responses (see the NestJS `HttpExceptionFilter`):
+ *   { statusCode, timestamp, path, error }
+ * where `error` is either a plain string (Prisma/custom/fallback cases) or the
+ * thrown `HttpException`'s response object, e.g. `{ message, statusCode, error }`
+ * — and `message` there may be a string or a string[] (class-validator).
+ */
+interface BackendErrorEnvelope {
+  statusCode?: number
+  error?: string | { message?: string | string[] }
+  /** Some endpoints/older shapes put the message at the top level. */
+  message?: string | string[]
+}
+
+/** Normalise a string | string[] message to the first usable string. */
+const firstMessage = (value: string | string[] | undefined): string | null => {
+  if (Array.isArray(value)) return value[0] ?? null
+  if (typeof value === 'string' && value.length > 0) return value
+  return null
+}
+
 /** Pull a human-readable message out of an Axios/unknown error. */
 export const extractErrorMessage = (
   error: unknown,
   fallback = 'Something went wrong. Please try again.',
 ): string => {
   if (axios.isAxiosError(error)) {
-    const data = error.response?.data as
-      | { message?: string | string[] }
-      | undefined
-    const message = data?.message
-    if (Array.isArray(message)) return message[0] ?? fallback
-    if (typeof message === 'string') return message
+    const data = error.response?.data as BackendErrorEnvelope | undefined
+
+    // Filter envelope: `error` is a string, or a nested object with `message`.
+    if (typeof data?.error === 'string') return data.error
+    if (data?.error && typeof data.error === 'object') {
+      const nested = firstMessage(data.error.message)
+      if (nested) return nested
+    }
+
+    // Fall back to a top-level `message` (endpoints not wrapped by the filter).
+    const top = firstMessage(data?.message)
+    if (top) return top
+
+    // Last resort before the generic fallback: a network/timeout error.
+    if (!error.response) {
+      return 'Unable to reach the server. Check your connection and try again.'
+    }
   }
   return fallback
 }

@@ -80,6 +80,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Log out: revoke the session server-side (clears the refresh cookie), then
+   * drop local auth state. The server call is best-effort — even if it fails
+   * (network down, token already expired) we still clear locally so the user
+   * is never stuck "logged in" on the client.
+   */
+  async function logout(): Promise<void> {
+    try {
+      await authService.logout()
+    } catch {
+      // Ignore: clearing local state below is what actually logs the user out.
+    } finally {
+      clear()
+    }
+  }
+
   /** Clear local auth state. Called manually or by the axios error handler. */
   function clear(): void {
     setToken(null)
@@ -101,6 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     restoreSession,
+    logout,
     clear,
     resetError,
   }

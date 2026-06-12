@@ -31,4 +31,13 @@ export const authService = {
       .post<RefreshResponseDto>('/auth/refresh')
       .then((res) => res.data)
   },
+
+  /**
+   * Revoke the session server-side: clears the refresh cookie and invalidates
+   * the stored refresh token. Requires the access token (attached by the axios
+   * interceptor). Returns nothing meaningful — callers clear local state too.
+   */
+  logout(): Promise<void> {
+    return apiClient.post('/auth/logout').then(() => undefined)
+  },
 }

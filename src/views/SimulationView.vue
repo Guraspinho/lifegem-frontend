@@ -1,0 +1,106 @@
+<script setup lang="ts">
+/**
+ * Live simulation view (`/simulation/:specialty`).
+ *
+ * On mount it opens the Socket.IO session for the chosen specialty: connect →
+ * `start_session` → wait for `session_started` (loader) → live chat. The chat
+ * sits on the left, the patient monitor/vitals on the right, and the animated
+ * heartbeat lives in the header's top-right corner.
+ *
+ * The specialty is resolved from the dashboard data by route param so we can
+ * show its title/accent; unknown specialties bounce back to the dashboard.
+ */
+import { computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import SimulationHeader from '@/components/simulation/SimulationHeader.vue'
+import ChatPanel from '@/components/simulation/ChatPanel.vue'
+import PatientPanel from '@/components/simulation/PatientPanel.vue'
+import { useChatSession } from '@/composables/useChatSession'
+import { specialties } from '@/data/dashboard'
+import { sessionSpecialtyById } from '@/data/simulation'
+
+const route = useRoute()
+const router = useRouter()
+
+const specialtyId = computed(() => String(route.params.specialty ?? ''))
+const specialty = computed(() =>
+  specialties.find((s) => s.id === specialtyId.value),
+)
+
+const {
+  phase,
+  messages,
+  error,
+  patientThinking,
+  patientAlive,
+  vitals,
+  start,
+  sendMessage,
+  end,
+} = useChatSession()
+
+onMounted(() => {
+  const backendSpecialty = specialty.value
+    ? sessionSpecialtyById[specialty.value.id]
+    : undefined
+
+  // Guard against deep-links to an unknown / unmapped specialty.
+  if (!specialty.value || !backendSpecialty) {
+    void router.replace({ name: 'home' })
+    return
+  }
+  start(backendSpecialty)
+})
+
+function handleEnd(): void {
+  end()
+  void router.push({ name: 'home' })
+}
+
+function handleRetry(): void {
+  // Simplest reliable reset: re-enter the route to rebuild the session.
+  void router.go(0)
+}
+</script>
+
+<template>
+  <div
+    v-if="specialty"
+    class="flex h-screen flex-col bg-slate-100 dark:bg-slate-950"
+  >
+    <SimulationHeader
+      :specialty-title="specialty.title"
+      :accent="specialty.accent"
+      :patient-alive="patientAlive"
+      :bpm="vitals?.heartRate"
+      @end="handleEnd"
+    />
+
+    <main
+      class="mx-auto grid w-full max-w-7xl flex-1 grid-cols-1 gap-5 overflow-hidden px-4 py-5 sm:px-6 lg:grid-cols-3 lg:px-8"
+    >
+      <!-- Chat: left, takes the bulk of the width -->
+      <div class="min-h-0 lg:col-span-2">
+        <ChatPanel
+          :messages="messages"
+          :active="phase === 'active'"
+          :thinking="patientThinking"
+          @send="sendMessage"
+        />
+      </div>
+
+      <!-- Patient panel: right -->
+      <div class="min-h-0 lg:col-span-1">
+        <PatientPanel
+          :phase="phase"
+          :specialty-title="specialty.title"
+          :accent="specialty.accent"
+          :vitals="vitals"
+          :error="error"
+          @retry="handleRetry"
+          @exit="handleEnd"
+        />
+      </div>
+    </main>
+  </div>
+</template>

@@ -26,9 +26,13 @@ export function useAuth() {
     await router.push({ name: 'login', query: { registered: '1' } })
   }
 
-  function logout(): void {
-    store.clear()
-    void router.push({ name: 'login' })
+  /**
+   * Revoke the session server-side, then send the user to login. The store's
+   * logout is best-effort, so this always resolves to a logged-out state.
+   */
+  async function logout(): Promise<void> {
+    await store.logout()
+    await router.push({ name: 'login' })
   }
 
   /** Send the user to their intended page (?redirect=) or the app home. */

@@ -7,6 +7,7 @@
  * Auth wiring is left as-is: logout flows through the existing `useAuth`.
  */
 import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useUser } from '@/composables/useUser'
 import DashboardNav from '@/components/dashboard/DashboardNav.vue'
@@ -20,6 +21,7 @@ import type { DashboardStat, DashboardUser } from '@/types/dashboard.types'
 
 const { logout } = useAuth()
 const { user, fetchUser } = useUser()
+const router = useRouter()
 
 onMounted(fetchUser)
 
@@ -73,10 +75,10 @@ const stats = computed<DashboardStat[]>(() => {
   ]
 })
 
-// Placeholder until the simulation engine exists — starting a session will
-// later navigate into the case runner for the chosen specialty.
+// Enter the live simulation for the chosen specialty. The view opens the
+// WebSocket session (connect → start_session → chat) on mount.
 function startSession(specialtyId: string): void {
-  console.info(`[LifeGem] start session requested: ${specialtyId}`)
+  void router.push({ name: 'simulation', params: { specialty: specialtyId } })
 }
 </script>
 
