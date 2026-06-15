@@ -10,14 +10,20 @@
  * intentionally not shown here — the trainee has to reach the diagnosis.
  */
 import { computed } from 'vue'
-import type { PatientVitals, SessionPhase } from '@/types/chat.types'
+import ScoreEvaluation from './ScoreEvaluation.vue'
+import type { PatientProfile, SessionPhase } from '@/types/chat.types'
 import type { SpecialtyAccent } from '@/types/dashboard.types'
 
 const props = defineProps<{
   phase: SessionPhase
   specialtyTitle: string
   accent: SpecialtyAccent
-  vitals?: PatientVitals | null
+  patient?: PatientProfile | null
+  /** Live evaluation, surfaced via ScoreEvaluation at the top of the panel. */
+  score?: number | null
+  scoreDelta?: number | null
+  scoreHistory?: number[]
+  feedback?: string | null
   error?: string | null
 }>()
 
@@ -25,7 +31,7 @@ defineEmits<{ retry: []; exit: [] }>()
 
 /** The four live vitals shown in the grid, derived from the patient data. */
 const vitalCards = computed(() => {
-  const v = props.vitals
+  const v = props.patient
   return [
     { label: 'Heart rate', value: v ? String(v.heartRate) : '––', unit: 'bpm' },
     { label: 'Blood pressure', value: v?.bloodPressure ?? '––', unit: 'mmHg' },
@@ -36,7 +42,7 @@ const vitalCards = computed(() => {
 
 /** "42 · Male" style subtitle under the patient name. */
 const demographics = computed(() => {
-  const v = props.vitals
+  const v = props.patient
   if (!v) return ''
   return [v.patientAge ? `${v.patientAge} yrs` : null, v.patientGender]
     .filter(Boolean)
@@ -45,7 +51,7 @@ const demographics = computed(() => {
 
 /** Colour the status dot by how stable the patient reads. */
 const statusTone = computed(() => {
-  const s = (props.vitals?.patientStatus ?? '').toLowerCase()
+  const s = (props.patient?.patientStatus ?? '').toLowerCase()
   if (/(critical|unstable|severe)/.test(s))
     return 'text-rose-600 dark:text-rose-400'
   if (/(guarded|fair|moderate)/.test(s))
@@ -54,7 +60,7 @@ const statusTone = computed(() => {
 })
 
 const statusDot = computed(() => {
-  const s = (props.vitals?.patientStatus ?? '').toLowerCase()
+  const s = (props.patient?.patientStatus ?? '').toLowerCase()
   if (/(critical|unstable|severe)/.test(s)) return 'bg-rose-500'
   if (/(guarded|fair|moderate)/.test(s)) return 'bg-amber-500'
   return 'bg-emerald-500'
@@ -182,7 +188,15 @@ const statusDot = computed(() => {
     </div>
 
     <!-- Active patient card -->
-    <div v-else class="flex flex-1 flex-col overflow-y-auto">
+    <div v-else class="flex flex-1 flex-col gap-4 overflow-y-auto">
+      <!-- Live evaluation (chess-eval style) -->
+      <ScoreEvaluation
+        :score="score ?? null"
+        :delta="scoreDelta ?? null"
+        :history="scoreHistory"
+        :feedback="feedback"
+      />
+
       <div class="flex items-center gap-3">
         <span
           class="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-sm"
@@ -202,7 +216,7 @@ const statusDot = computed(() => {
         </span>
         <div class="min-w-0 leading-tight">
           <p class="truncate text-sm font-semibold text-slate-900 dark:text-white">
-            {{ vitals?.patientName || 'Patient' }}
+            {{ patient?.patientName || 'Patient' }}
           </p>
           <p
             v-if="demographics"
@@ -215,51 +229,57 @@ const statusDot = computed(() => {
 
       <!-- Status -->
       <p
-        v-if="vitals?.patientStatus"
-        class="mt-3 flex items-center gap-1.5 text-xs font-medium"
+        v-if="patient?.patientStatus"
+        class="-mt-1 flex items-center gap-1.5 text-xs font-medium"
         :class="statusTone"
       >
         <span
           class="inline-block h-1.5 w-1.5 animate-pulse rounded-full"
           :class="statusDot"
         />
-        {{ vitals.patientStatus }}
+        {{ patient.patientStatus }}
       </p>
 
-      <p
-        class="mt-4 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500"
-      >
-        Vitals
-      </p>
-      <div class="mt-2 grid grid-cols-2 gap-2.5">
-        <div
-          v-for="v in vitalCards"
-          :key="v.label"
-          class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60"
+      <div>
+        <p
+          class="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500"
         >
-          <p class="text-xs text-slate-500 dark:text-slate-400">{{ v.label }}</p>
-          <p class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-white">
-            {{ v.value }}
-            <span class="text-xs font-normal text-slate-400">{{ v.unit }}</span>
-          </p>
+          Vitals
+        </p>
+        <div class="mt-2 grid grid-cols-2 gap-2.5">
+          <div
+            v-for="v in vitalCards"
+            :key="v.label"
+            class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/60"
+          >
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              {{ v.label }}
+            </p>
+            <p
+              class="mt-0.5 text-lg font-semibold tabular-nums text-slate-900 dark:text-white"
+            >
+              {{ v.value }}
+              <span class="text-xs font-normal text-slate-400">{{ v.unit }}</span>
+            </p>
+          </div>
         </div>
       </div>
 
       <!-- Profile details -->
       <dl
-        v-if="vitals"
-        class="mt-3 space-y-2 rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-slate-700 dark:bg-slate-800/60"
+        v-if="patient"
+        class="space-y-2 rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-slate-700 dark:bg-slate-800/60"
       >
         <div class="flex items-center justify-between gap-3">
           <dt class="text-slate-500 dark:text-slate-400">Weight</dt>
           <dd class="font-medium text-slate-800 dark:text-slate-200">
-            {{ vitals.weight }} kg
+            {{ patient.weight }} kg
           </dd>
         </div>
         <div class="flex items-start justify-between gap-3">
           <dt class="text-slate-500 dark:text-slate-400">Allergies</dt>
           <dd class="text-right font-medium text-slate-800 dark:text-slate-200">
-            {{ vitals.knownAllergies || 'None known' }}
+            {{ patient.knownAllergies || 'None known' }}
           </dd>
         </div>
       </dl>

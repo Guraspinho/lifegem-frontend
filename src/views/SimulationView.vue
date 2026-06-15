@@ -33,7 +33,11 @@ const {
   error,
   patientThinking,
   patientAlive,
-  vitals,
+  patient,
+  score,
+  scoreDelta,
+  scoreHistory,
+  feedback,
   start,
   sendMessage,
   end,
@@ -72,7 +76,7 @@ function handleRetry(): void {
       :specialty-title="specialty.title"
       :accent="specialty.accent"
       :patient-alive="patientAlive"
-      :bpm="vitals?.heartRate"
+      :bpm="patient?.heartRate"
       @end="handleEnd"
     />
 
@@ -95,7 +99,11 @@ function handleRetry(): void {
           :phase="phase"
           :specialty-title="specialty.title"
           :accent="specialty.accent"
-          :vitals="vitals"
+          :patient="patient"
+          :score="score"
+          :score-delta="scoreDelta"
+          :score-history="scoreHistory"
+          :feedback="feedback"
           :error="error"
           @retry="handleRetry"
           @exit="handleEnd"

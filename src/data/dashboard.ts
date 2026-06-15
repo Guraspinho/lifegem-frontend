@@ -32,7 +32,7 @@ export const specialties: Specialty[] = [
   {
     id: 'emergency',
     title: 'Emergency Medicine',
-    description: 'High-pressure emergency department decision-making.',
+    description: 'Emergency department decision-making.',
     topics: ['Unstable vitals', 'Triage', 'Critical patients'],
     difficulty: 'Advanced',
     duration: '30–40 min',

@@ -4,13 +4,12 @@
  *
  * Event names + payloads are kept 1:1 with the backend gateway/service so the
  * socket layer and the gateway stay compatible:
- *   emit  "start_session"  { specialty }          → server generates a patient
- *   emit  "chat_message"   "<text>"               → server streams a reply
- *   on    "session_started"{ message, vitals }     (patient ready + opener)
- *   on    "chat:chunk"     { chunk }               (streamed reply token)
- *   on    "chat:done"      { done: true }          (reply complete)
- *   on    "chat:error"     { message }             (per-message failure)
- *   on    "error"          "<reason>"              (auth/connection failure)
+ *   emit  "start_session"  { specialty }              → generate a patient
+ *   emit  "chat_message"   "<text>"                   → ask the patient
+ *   on    "session_started"{ message, patient }        (patient ready + opener)
+ *   on    "chat:done"      { outputMessage, patient }  (reply + updated vitals)
+ *   on    "chat:error"     { message }                 (per-message failure)
+ *   on    "error"          "<reason>"                  (auth/connection failure)
  */
 
 /** Who authored a chat bubble. */
@@ -59,32 +58,49 @@ export interface StartSessionPayload {
 }
 
 /**
- * The generated patient's profile + live vitals (mirrors backend
- * `PatientVitalsType`). `condition`, `answerAccuracy` and `shortFeedback` are
- * evaluation fields — the UI deliberately does NOT surface them during the
- * consultation so the trainee has to reach the diagnosis themselves.
+ * Per-turn vitals + evaluation the patient emits after every reply (mirrors
+ * backend `PatientVitalsType`). `answerAccuracy` and `shortFeedback` form the
+ * live evaluation; the UI tracks `answerAccuracy` over time like a chess eval.
  */
 export interface PatientVitals {
+  heartRate: number
+  bloodPressure: string
+  spO2: number
+  painLevel: number
+  patientStatus: string
+  /** Running diagnostic-accuracy score (0–100), updated each turn. */
+  answerAccuracy: number
+  /** One-line coaching note on the trainee's latest move. */
+  shortFeedback: string
+}
+
+/**
+ * The full generated patient (mirrors backend `PatientInitialInfoType`): the
+ * per-turn vitals plus the static profile. `condition` is the diagnosis target,
+ * so the UI deliberately does NOT surface it during the consultation.
+ */
+export interface PatientProfile extends PatientVitals {
   patientName: string
   patientAge: number
   patientGender: string
   weight: number
   knownAllergies: string
   condition: string
-  heartRate: number
-  bloodPressure: string
-  spO2: number
-  painLevel: number
-  patientStatus: string
-  answerAccuracy: number
-  shortFeedback: string
 }
 
 /** Payload for the `session_started` event once the patient is generated. */
 export interface SessionStartedPayload {
   /** The patient's opening line, shown as the first patient message. */
   message: string
-  vitals: PatientVitals
+  patient: PatientProfile
+}
+
+/** Payload for the `chat:done` event after the patient answers a message. */
+export interface ChatDonePayload {
+  /** The patient's reply, shown as a patient message. */
+  outputMessage: string
+  /** Refreshed vitals + evaluation for this turn. */
+  patient: PatientVitals
 }
 
 /** A one-tap clinical prompt shown above the composer. */

@@ -75,7 +75,7 @@ const difficultyClass = computed(
 
 <template>
   <article
-    class="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-sm ring-1 ring-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:shadow-black/30"
+    class="group relative flex min-h-[22rem] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-sm ring-1 ring-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:shadow-black/30"
     :class="accent.ring"
   >
     <!-- Accent top bar -->

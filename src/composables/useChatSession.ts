@@ -2,8 +2,10 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import type { Socket } from 'socket.io-client'
 import { createChatSocket } from '@/api/chat.socket'
 import type {
+  ChatDonePayload,
   ChatMessage,
   ChatRole,
+  PatientProfile,
   PatientVitals,
   SessionPhase,
   SessionSpecialty,
@@ -29,11 +31,36 @@ export function useChatSession() {
   /** True while we're awaiting the patient's reply to the latest message. */
   const patientThinking = ref(false)
   /** The generated patient's profile + vitals; null until `session_started`. */
-  const vitals = ref<PatientVitals | null>(null)
+  const patient = ref<PatientProfile | null>(null)
+  /** Diagnostic-accuracy score per turn (0–100) — drives the live evaluation. */
+  const scoreHistory = ref<number[]>([])
+
+  /** Latest accuracy score, or null before the session starts. */
+  const score = computed<number | null>(() => {
+    const h = scoreHistory.value
+    return h.length ? h[h.length - 1]! : null
+  })
+  /** Change vs the previous turn (chess-eval style delta). */
+  const scoreDelta = computed<number | null>(() => {
+    const h = scoreHistory.value
+    return h.length >= 2 ? h[h.length - 1]! - h[h.length - 2]! : null
+  })
+  /** Latest one-line coaching feedback from the patient turn. */
+  const feedback = computed(() => patient.value?.shortFeedback ?? null)
 
   let socket: Socket | null = null
-  /** Id of the patient bubble currently being streamed into, if any. */
+  /** Id of the pending patient bubble awaiting a reply, if any. */
   let streamingId: string | null = null
+
+  /** Merge per-turn vitals into the patient profile and record the score. */
+  function applyPatientUpdate(update: PatientVitals | PatientProfile): void {
+    patient.value = patient.value
+      ? { ...patient.value, ...update }
+      : (update as PatientProfile)
+    if (typeof update.answerAccuracy === 'number') {
+      scoreHistory.value.push(update.answerAccuracy)
+    }
+  }
 
   const isConnected = computed(() => phase.value === 'active')
   const isGenerating = computed(
@@ -69,35 +96,28 @@ export function useChatSession() {
       s.emit('start_session', { specialty: currentSpecialty })
     })
 
-    // Patient generation finished — chat is live. Capture the vitals and show
-    // the patient's opening line as the first message.
+    // Patient generation finished — chat is live. Capture the patient profile
+    // (incl. the opening accuracy score) and show the opening line.
     s.on('session_started', (payload: SessionStartedPayload) => {
       phase.value = 'active'
-      if (payload?.vitals) vitals.value = payload.vitals
+      if (payload?.patient) applyPatientUpdate(payload.patient)
       pushMessage('system', 'Consultation started — the patient is ready.')
       if (payload?.message) pushMessage('patient', payload.message)
     })
 
-    // Streamed reply tokens (backend may batch or stream these).
-    s.on('chat:chunk', (payload: { chunk?: string }) => {
-      patientThinking.value = false
-      const target = streamingMessage()
-      if (target) target.content += payload?.chunk ?? ''
-    })
-
-    // Reply complete — finalise the streaming bubble.
-    s.on('chat:done', () => {
+    // Reply complete — fill the pending bubble, refresh vitals + score.
+    s.on('chat:done', (payload: ChatDonePayload) => {
       patientThinking.value = false
       const target = streamingMessage()
       if (target) {
+        target.content =
+          payload?.outputMessage || 'The patient did not respond clearly.'
         target.pending = false
-        // Backend streaming is still being wired up; show a gentle placeholder
-        // rather than an empty bubble if no tokens arrived.
-        if (!target.content) {
-          target.content = '…'
-        }
+      } else if (payload?.outputMessage) {
+        pushMessage('patient', payload.outputMessage)
       }
       streamingId = null
+      if (payload?.patient) applyPatientUpdate(payload.patient)
     })
 
     s.on('chat:error', (payload: { message?: unknown }) => {
@@ -153,7 +173,7 @@ export function useChatSession() {
     pushMessage('doctor', content)
     socket.emit('chat_message', content)
 
-    // Pre-create the patient bubble so streamed tokens have somewhere to land.
+    // Pre-create the patient bubble so the reply has somewhere to land.
     const reply = pushMessage('patient', '')
     reply.pending = true
     streamingId = reply.id
@@ -178,7 +198,11 @@ export function useChatSession() {
     messages,
     error,
     patientThinking,
-    vitals,
+    patient,
+    score,
+    scoreDelta,
+    scoreHistory,
+    feedback,
     isConnected,
     isGenerating,
     patientAlive,
