@@ -1,32 +1,21 @@
 <script setup lang="ts">
-/**
- * End-of-session analytics window. Opens when the trainee ends the session and
- * walks through three states: a loading spinner while the server runs its
- * analysis, a timeout/error fallback, and the full report — summary stats, a
- * per-message accuracy chart, the final diagnosis, and the expandable AI
- * analysis. Closing it tears the socket down and returns to the dashboard.
- */
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import SessionScoreChart from './SessionScoreChart.vue'
-import type { SessionResult } from '@/types/chat.types'
+import type { SessionEndPayload } from '@/types/chat.types'
 
 const props = defineProps<{
   open: boolean
   loading: boolean
-  result: SessionResult | null
-  scores: number[]
-  /** Set when the analysis timed out / failed. */
+  report: SessionEndPayload | null
   errorMessage?: string | null
   specialtyTitle: string
 }>()
 
 const emit = defineEmits<{ close: [] }>()
 
-const analysisExpanded = ref(false)
+const review = computed(() => props.report?.review ?? null)
+const scorePct = computed(() => Math.round(props.report?.score ?? 0))
 
-const scorePct = computed(() => Math.round(props.result?.score ?? 0))
-
-/** Colour-grade the headline score by band. */
 const scoreTone = computed(() => {
   const s = scorePct.value
   if (s >= 75) return 'text-emerald-600 dark:text-emerald-400'
@@ -36,16 +25,11 @@ const scoreTone = computed(() => {
 })
 
 const durationLabel = computed(() => {
-  const total = Math.max(0, Math.round(props.result?.duration_seconds ?? 0))
+  const total = Math.max(0, Math.round(props.report?.durationSeconds ?? 0))
   const m = Math.floor(total / 60)
   const s = total % 60
   return `${m}:${s.toString().padStart(2, '0')}`
 })
-
-/** Whether the analysis text is long enough to warrant the expand toggle. */
-const analysisIsLong = computed(
-  () => (props.result?.systemAnalysis?.length ?? 0) > 360,
-)
 </script>
 
 <template>
@@ -63,7 +47,6 @@ const analysisIsLong = computed(
         <div
           class="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900"
         >
-          <!-- Header -->
           <div
             class="flex items-center justify-between gap-3 border-b border-slate-200/80 px-6 py-4 dark:border-slate-800"
           >
@@ -118,9 +101,7 @@ const analysisIsLong = computed(
             </button>
           </div>
 
-          <!-- Body -->
           <div class="flex-1 overflow-y-auto px-6 py-5">
-            <!-- Loading -->
             <div
               v-if="loading"
               class="flex flex-col items-center justify-center py-16 text-center"
@@ -160,9 +141,8 @@ const analysisIsLong = computed(
               </p>
             </div>
 
-            <!-- Error / timeout -->
             <div
-              v-else-if="errorMessage && !result"
+              v-else-if="errorMessage && !review"
               class="flex flex-col items-center justify-center py-16 text-center"
             >
               <span
@@ -193,11 +173,8 @@ const analysisIsLong = computed(
               </p>
             </div>
 
-            <!-- Report -->
-            <div v-else-if="result" class="space-y-6">
-              <!-- Summary stats -->
+            <div v-else-if="review && report" class="space-y-6">
               <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <!-- Score -->
                 <div
                   class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40"
                 >
@@ -214,7 +191,6 @@ const analysisIsLong = computed(
                   </p>
                 </div>
 
-                <!-- Diagnosis correctness -->
                 <div
                   class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40"
                 >
@@ -224,18 +200,17 @@ const analysisIsLong = computed(
                     Diagnosis
                   </p>
                   <p
-                    class="mt-1 flex items-center gap-1.5 text-sm font-semibold"
+                    class="mt-1 text-sm font-semibold"
                     :class="
-                      result.correct_diagnosis
+                      review.diagnosis.correct
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-rose-600 dark:text-rose-400'
                     "
                   >
-                    {{ result.correct_diagnosis ? 'Correct' : 'Incorrect' }}
+                    {{ review.diagnosis.correct ? 'Correct' : 'Incorrect' }}
                   </p>
                 </div>
 
-                <!-- Patient outcome -->
                 <div
                   class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40"
                 >
@@ -245,18 +220,17 @@ const analysisIsLong = computed(
                     Patient
                   </p>
                   <p
-                    class="mt-1 flex items-center gap-1.5 text-sm font-semibold"
+                    class="mt-1 text-sm font-semibold"
                     :class="
-                      result.patient_survived
+                      report.patientSurvived
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-rose-600 dark:text-rose-400'
                     "
                   >
-                    {{ result.patient_survived ? 'Survived' : 'Deceased' }}
+                    {{ report.patientSurvived ? 'Survived' : 'Deceased' }}
                   </p>
                 </div>
 
-                <!-- Duration -->
                 <div
                   class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40"
                 >
@@ -273,7 +247,27 @@ const analysisIsLong = computed(
                 </div>
               </div>
 
-              <!-- Accuracy chart -->
+              <section
+                class="rounded-2xl border border-slate-200 bg-indigo-50/40 p-5 dark:border-slate-700 dark:bg-indigo-500/5"
+              >
+                <h3
+                  class="mb-1.5 text-sm font-semibold text-slate-900 dark:text-white"
+                >
+                  Overall performance
+                </h3>
+                <p
+                  class="text-sm leading-relaxed text-slate-600 dark:text-slate-300"
+                >
+                  {{ review.overallPerformance }}
+                </p>
+                <p
+                  v-if="review.scoreJustification"
+                  class="mt-3 border-t border-slate-200/70 pt-3 text-xs leading-relaxed text-slate-500 dark:border-slate-700 dark:text-slate-400"
+                >
+                  {{ review.scoreJustification }}
+                </p>
+              </section>
+
               <section
                 class="rounded-2xl border border-slate-200 p-5 dark:border-slate-700"
               >
@@ -282,62 +276,71 @@ const analysisIsLong = computed(
                 >
                   Performance over time
                 </h3>
-                <SessionScoreChart :scores="scores" :average="result.score" />
+                <SessionScoreChart
+                  :scores="report.stepScores"
+                  :average="report.score"
+                />
               </section>
 
-              <!-- Final diagnosis -->
-              <section>
+              <section
+                class="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 dark:border-slate-700 dark:bg-slate-800/40"
+              >
                 <h3
-                  class="mb-2 text-sm font-semibold text-slate-900 dark:text-white"
+                  class="mb-3 text-sm font-semibold text-slate-900 dark:text-white"
                 >
-                  Your final diagnosis
+                  Diagnosis
                 </h3>
-                <p
-                  class="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300"
-                  :class="{ 'italic text-slate-400 dark:text-slate-500': !result.final_diagnosis }"
-                >
-                  {{ result.final_diagnosis || 'No final diagnosis was submitted.' }}
-                </p>
-              </section>
-
-              <!-- System analysis (expandable) -->
-              <section>
-                <h3
-                  class="mb-2 text-sm font-semibold text-slate-900 dark:text-white"
-                >
-                  Clinical analysis
-                </h3>
-                <div
-                  class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-700 dark:bg-slate-800/40"
-                >
-                  <div class="relative">
-                    <p
-                      class="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300"
-                      :class="
-                        analysisIsLong && !analysisExpanded
-                          ? 'max-h-32 overflow-hidden'
-                          : ''
-                      "
+                <dl class="space-y-2.5 text-sm">
+                  <div class="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+                    <dt
+                      class="w-40 flex-none text-slate-500 dark:text-slate-400"
                     >
-                      {{ result.systemAnalysis || 'No analysis was generated for this session.' }}
-                    </p>
-                    <!-- Fade overlay when collapsed -->
-                    <div
-                      v-if="analysisIsLong && !analysisExpanded"
-                      class="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-slate-50/90 to-transparent dark:from-slate-800/70"
-                    />
+                      Actual condition
+                    </dt>
+                    <dd class="font-medium text-slate-800 dark:text-slate-200">
+                      {{ review.diagnosis.actualCondition || '—' }}
+                    </dd>
                   </div>
-
-                  <button
-                    v-if="analysisIsLong"
-                    type="button"
-                    class="mt-2 flex items-center gap-1 text-xs font-semibold text-indigo-600 transition-colors hover:text-indigo-500 dark:text-indigo-400"
-                    @click="analysisExpanded = !analysisExpanded"
+                  <div class="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+                    <dt
+                      class="w-40 flex-none text-slate-500 dark:text-slate-400"
+                    >
+                      Your diagnosis
+                    </dt>
+                    <dd
+                      class="font-medium text-slate-800 dark:text-slate-200"
+                      :class="{ 'italic text-slate-400 dark:text-slate-500': !review.diagnosis.traineeDiagnosis }"
+                    >
+                      {{ review.diagnosis.traineeDiagnosis || 'Not submitted' }}
+                    </dd>
+                  </div>
+                  <div
+                    v-if="review.diagnosis.notes"
+                    class="flex flex-col gap-0.5 sm:flex-row sm:gap-3"
                   >
-                    {{ analysisExpanded ? 'Show less' : 'Read full analysis' }}
+                    <dt
+                      class="w-40 flex-none text-slate-500 dark:text-slate-400"
+                    >
+                      Notes
+                    </dt>
+                    <dd
+                      class="leading-relaxed text-slate-600 dark:text-slate-300"
+                    >
+                      {{ review.diagnosis.notes }}
+                    </dd>
+                  </div>
+                </dl>
+              </section>
+
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <section
+                  class="rounded-2xl border border-emerald-200/70 bg-emerald-50/50 p-5 dark:border-emerald-500/20 dark:bg-emerald-500/5"
+                >
+                  <h3
+                    class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400"
+                  >
                     <svg
-                      class="h-3.5 w-3.5 transition-transform"
-                      :class="{ 'rotate-180': analysisExpanded }"
+                      class="h-4 w-4"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -345,15 +348,110 @@ const analysisIsLong = computed(
                       stroke-linecap="round"
                       stroke-linejoin="round"
                     >
-                      <path d="m6 9 6 6 6-6" />
+                      <path d="M20 6 9 17l-5-5" />
                     </svg>
-                  </button>
-                </div>
+                    What went well
+                  </h3>
+                  <ul class="space-y-2">
+                    <li
+                      v-for="(item, i) in review.whatWentWell"
+                      :key="i"
+                      class="flex gap-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300"
+                    >
+                      <span
+                        class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-emerald-500"
+                      />
+                      {{ item }}
+                    </li>
+                    <li
+                      v-if="!review.whatWentWell.length"
+                      class="text-sm italic text-slate-400 dark:text-slate-500"
+                    >
+                      Nothing noted.
+                    </li>
+                  </ul>
+                </section>
+
+                <section
+                  class="rounded-2xl border border-amber-200/70 bg-amber-50/50 p-5 dark:border-amber-500/20 dark:bg-amber-500/5"
+                >
+                  <h3
+                    class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-amber-700 dark:text-amber-400"
+                  >
+                    <svg
+                      class="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M12 20v-6M12 10V4" />
+                      <path d="m9 7 3-3 3 3" />
+                    </svg>
+                    To improve
+                  </h3>
+                  <ul class="space-y-2">
+                    <li
+                      v-for="(item, i) in review.whatCouldBeImproved"
+                      :key="i"
+                      class="flex gap-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300"
+                    >
+                      <span
+                        class="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-amber-500"
+                      />
+                      {{ item }}
+                    </li>
+                    <li
+                      v-if="!review.whatCouldBeImproved.length"
+                      class="text-sm italic text-slate-400 dark:text-slate-500"
+                    >
+                      Nothing noted.
+                    </li>
+                  </ul>
+                </section>
+              </div>
+
+              <section
+                v-if="review.keyLearningPoints.length"
+                class="rounded-2xl border border-indigo-200/70 bg-indigo-50/50 p-5 dark:border-indigo-500/20 dark:bg-indigo-500/5"
+              >
+                <h3
+                  class="mb-3 flex items-center gap-1.5 text-sm font-semibold text-indigo-700 dark:text-indigo-400"
+                >
+                  <svg
+                    class="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M9 18h6M10 22h4" />
+                    <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2Z" />
+                  </svg>
+                  Key learning points
+                </h3>
+                <ul class="space-y-2">
+                  <li
+                    v-for="(item, i) in review.keyLearningPoints"
+                    :key="i"
+                    class="flex gap-2.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300"
+                  >
+                    <span
+                      class="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-indigo-100 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300"
+                    >
+                      {{ i + 1 }}
+                    </span>
+                    {{ item }}
+                  </li>
+                </ul>
               </section>
             </div>
           </div>
 
-          <!-- Footer -->
           <div
             v-if="!loading"
             class="flex justify-end border-t border-slate-200/80 px-6 py-4 dark:border-slate-800"

@@ -9,12 +9,10 @@ import type {
   PatientVitals,
   SessionEndPayload,
   SessionPhase,
-  SessionResult,
   SessionSpecialty,
   SessionStartedPayload,
 } from '@/types/chat.types'
 
-/** How long to wait for the server's analysis before showing a timeout. */
 const ANALYSIS_TIMEOUT_MS = 60_000
 
 /** Monotonic id source for chat bubbles (unique within a page session). */
@@ -58,24 +56,16 @@ export function useChatSession() {
    * server persists this value on disconnect. Empty means none was submitted.
    */
   const finalDiagnosis = ref('')
-  /** True once a non-empty diagnosis has been submitted to the server. */
   const hasDiagnosis = computed(() => finalDiagnosis.value.trim().length > 0)
 
-  /** The server's end-of-session analysis; null until `session:end` arrives. */
-  const sessionResult = ref<SessionResult | null>(null)
-  /** Per-turn accuracy scores for the results chart. */
-  const sessionScores = ref<number[]>([])
-  /** Set if the analysis request times out (the server failed silently). */
+  const sessionReport = ref<SessionEndPayload | null>(null)
   const analysisError = ref<string | null>(null)
-  /** True while waiting for the analysis after requesting the end. */
   const analyzing = computed(
-    () => phase.value === 'analyzing' && !sessionResult.value,
+    () => phase.value === 'analyzing' && !sessionReport.value,
   )
 
   let socket: Socket | null = null
-  /** Pending analysis-timeout handle, cleared on result or teardown. */
   let analysisTimer: ReturnType<typeof setTimeout> | null = null
-  /** Id of the pending patient bubble awaiting a reply, if any. */
   let streamingId: string | null = null
 
   /** Merge per-turn vitals into the patient profile and record the score. */
@@ -146,33 +136,15 @@ export function useChatSession() {
       if (payload?.patient) applyPatientUpdate(payload.patient)
     })
 
-    // Analysis complete: store the report. The socket stays open until the
-    // user closes the results window (which calls `end`).
     s.on('session:end', (payload: SessionEndPayload) => {
       if (analysisTimer) {
         clearTimeout(analysisTimer)
         analysisTimer = null
       }
-      if (payload?.response) sessionResult.value = payload.response
-      sessionScores.value = Array.isArray(payload?.scores) ? payload.scores : []
+      if (payload?.review) sessionReport.value = payload
     })
 
-    s.on('chat:error', (payload: { message?: unknown }) => {
-      patientThinking.value = false
-      const target = streamingMessage()
-      if (target && !target.content) {
-        target.content = 'The patient could not respond. Please try again.'
-        target.pending = false
-      }
-      streamingId = null
-      error.value = normaliseError(payload?.message)
-    })
-
-    // Connection / auth failures emitted by the gateway service.
-    s.on('error', (reason: unknown) => {
-      error.value = normaliseError(reason)
-      phase.value = 'error'
-    })
+    s.on('error', handleServerError)
 
     s.on('connect_error', (err: Error) => {
       error.value = err.message || 'Could not connect to the simulation server.'
@@ -180,9 +152,40 @@ export function useChatSession() {
     })
 
     s.on('disconnect', () => {
-      // Only treat as "ended" if we weren't already in an error state.
       if (phase.value !== 'error') phase.value = 'ended'
     })
+  }
+
+  function handleServerError(payload: unknown): void {
+    const message = toErrorMessage(payload)
+
+    if (streamingId) {
+      patientThinking.value = false
+      const target = streamingMessage()
+      if (target) {
+        if (!target.content) {
+          target.content = 'The patient could not respond. Please try again.'
+        }
+        target.pending = false
+      }
+      streamingId = null
+      error.value = message
+      return
+    }
+
+    if (phase.value === 'analyzing') {
+      if (analysisTimer) {
+        clearTimeout(analysisTimer)
+        analysisTimer = null
+      }
+      analysisError.value = message
+      return
+    }
+
+    error.value = message
+    if (phase.value === 'connecting' || phase.value === 'generating') {
+      phase.value = 'error'
+    }
   }
 
   /* ---------------------------------------------------------------------- */
@@ -228,23 +231,16 @@ export function useChatSession() {
     socket.emit('final_diagnosis', value)
   }
 
-  /**
-   * Request the end-of-session analysis. Emits `session_end` and moves into the
-   * "analyzing" phase; the report arrives on `session:end`. Returns false when
-   * there's nothing to analyse (no live session) so the caller can just leave.
-   */
   function requestEnd(): boolean {
     if (!socket || phase.value !== 'active') return false
     analysisError.value = null
-    sessionResult.value = null
+    sessionReport.value = null
     phase.value = 'analyzing'
     socket.emit('session_end')
 
-    // The backend swallows analysis errors (logs only), so guard with a timeout
-    // rather than waiting forever on a result that may never come.
     analysisTimer = setTimeout(() => {
       analysisTimer = null
-      if (!sessionResult.value) {
+      if (!sessionReport.value) {
         analysisError.value =
           'The analysis is taking longer than expected. You can close this and try again later.'
       }
@@ -281,8 +277,7 @@ export function useChatSession() {
     feedback,
     finalDiagnosis,
     hasDiagnosis,
-    sessionResult,
-    sessionScores,
+    sessionReport,
     analyzing,
     analysisError,
     isConnected,
@@ -297,12 +292,22 @@ export function useChatSession() {
   }
 }
 
-/** Coerce an unknown error payload into a displayable string. */
-function normaliseError(value: unknown): string {
-  if (typeof value === 'string') return value
-  if (value && typeof value === 'object' && 'message' in value) {
-    const m = (value as { message?: unknown }).message
-    if (typeof m === 'string') return m
+function toErrorMessage(payload: unknown): string {
+  return drillMessage(payload) ?? 'Something went wrong during the session.'
+}
+
+function drillMessage(value: unknown): string | null {
+  if (typeof value === 'string') return value.trim() || null
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const found = drillMessage(item)
+      if (found) return found
+    }
+    return null
   }
-  return 'Something went wrong during the session.'
+  if (value && typeof value === 'object') {
+    const obj = value as { message?: unknown; error?: unknown }
+    return drillMessage(obj.message) ?? drillMessage(obj.error)
+  }
+  return null
 }

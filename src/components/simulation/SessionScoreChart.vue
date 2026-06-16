@@ -1,15 +1,8 @@
 <script setup lang="ts">
-/**
- * Per-message accuracy bar chart for the session report. Each bar is one doctor
- * turn; height maps the 0–100 accuracy score and the colour grades by band.
- * A dashed line marks the final (mean) score for quick comparison.
- */
 import { computed } from 'vue'
 
 const props = defineProps<{
-  /** Accuracy score per doctor turn, in order (0–100). */
   scores: number[]
-  /** Optional mean/final score to draw as a reference line. */
   average?: number | null
 }>()
 
@@ -43,9 +36,7 @@ const averagePct = computed(() =>
     </div>
 
     <div v-else>
-      <!-- Plot area (bars only, so the average line maps cleanly) -->
-      <div class="relative h-40">
-        <!-- Average reference line -->
+      <div class="relative h-44">
         <div
           v-if="averagePct !== null"
           class="pointer-events-none absolute inset-x-0 z-10"
@@ -61,39 +52,37 @@ const averagePct = computed(() =>
           </span>
         </div>
 
-        <div class="flex h-full items-end gap-1.5">
+        <div class="flex h-full items-end justify-center gap-3 sm:gap-4">
           <div
             v-for="b in bars"
             :key="b.turn"
-            class="group relative flex h-full flex-1 items-end"
+            class="group flex h-full w-full max-w-[2.25rem] flex-col items-center justify-end"
           >
-            <!-- Value tooltip on hover -->
             <span
-              class="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2 rounded-md bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white opacity-0 shadow transition-opacity group-hover:opacity-100 dark:bg-slate-700"
+              class="mb-1 text-[10px] font-semibold tabular-nums text-slate-400 opacity-0 transition-opacity group-hover:opacity-100 dark:text-slate-500"
             >
               {{ b.value }}%
             </span>
             <div
-              class="w-full rounded-t-md transition-all duration-500 ease-out hover:opacity-90"
+              class="w-full rounded-lg transition-all duration-500 ease-out group-hover:opacity-90"
               :class="b.bar"
-              :style="{ height: `${Math.max(2, b.value)}%` }"
+              :style="{ height: `${Math.max(3, b.value)}%` }"
             />
           </div>
         </div>
       </div>
 
-      <!-- Turn labels -->
-      <div class="mt-1.5 flex gap-1.5">
+      <div class="mt-2 flex justify-center gap-3 sm:gap-4">
         <span
           v-for="b in bars"
           :key="b.turn"
-          class="flex-1 text-center text-[10px] tabular-nums text-slate-400 dark:text-slate-500"
+          class="w-full max-w-[2.25rem] text-center text-[10px] tabular-nums text-slate-400 dark:text-slate-500"
         >
           {{ b.turn }}
         </span>
       </div>
 
-      <p class="mt-1 text-center text-xs text-slate-400 dark:text-slate-500">
+      <p class="mt-1.5 text-center text-xs text-slate-400 dark:text-slate-500">
         Accuracy by message turn
       </p>
     </div>
