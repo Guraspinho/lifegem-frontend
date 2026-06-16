@@ -113,32 +113,30 @@ export interface ChatDonePayload {
   patient: PatientVitals
 }
 
-/**
- * The persisted session report returned on `session:end` (mirrors the backend
- * `sessions.update` select). Field names match the server payload exactly.
- */
-export interface SessionResult {
-  /** Whether the AI judged the final diagnosis correct. */
-  correct_diagnosis: boolean
-  /** Final score (0–100), the mean of the per-turn accuracy scores. */
-  score: number
-  /** Session status, e.g. "COMPLETED". */
-  status: string
-  /** Total consultation length in seconds. */
-  duration_seconds: number
-  /** The trainee's submitted final diagnosis (may be empty). */
-  final_diagnosis: string
-  /** Whether the patient survived the consultation. */
-  patient_survived: boolean
-  /** Long-form AI analysis of the whole session (shown expandable). */
-  systemAnalysis: string
+export interface ReviewDiagnosis {
+  correct: boolean
+  actualCondition: string
+  traineeDiagnosis: string
+  notes: string
 }
 
-/** Payload for the `session:end` event once the server finishes analysis. */
+export interface FinalReview {
+  overallPerformance: string
+  whatWentWell: string[]
+  whatCouldBeImproved: string[]
+  keyLearningPoints: string[]
+  finalScore: number
+  scoreJustification: string
+  diagnosis: ReviewDiagnosis
+}
+
 export interface SessionEndPayload {
-  response: SessionResult
-  /** Per-turn diagnostic-accuracy scores, in message order (for the chart). */
-  scores: number[]
+  review: FinalReview
+  score: number
+  stepScores: number[]
+  patientSurvived: boolean
+  durationSeconds: number
+  finalDiagnosis: string
 }
 
 /** A one-tap clinical prompt shown above the composer. */

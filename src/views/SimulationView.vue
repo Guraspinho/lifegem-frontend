@@ -43,8 +43,7 @@ const {
   feedback,
   finalDiagnosis,
   hasDiagnosis,
-  sessionResult,
-  sessionScores,
+  sessionReport,
   analyzing,
   analysisError,
   start,
@@ -171,8 +170,7 @@ function handleRetry(): void {
     <SessionResultsModal
       :open="showResults"
       :loading="analyzing"
-      :result="sessionResult"
-      :scores="sessionScores"
+      :report="sessionReport"
       :error-message="analysisError"
       :specialty-title="specialty.title"
       @close="leaveSession"
