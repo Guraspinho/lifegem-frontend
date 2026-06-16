@@ -2,7 +2,7 @@
 /**
  * Full-screen split layout for the auth screens: an edge-to-edge periwinkle
  * brand panel on the left (hidden on small screens) and a white form panel on
- * the right whose rounded left edge overlaps the brand panel — like the design
+ * the right whose rounded left edge overlaps the brand panel, like the design
  * reference. Marketing copy is configurable so both screens reuse it.
  *
  * The stethoscope artwork is a static asset served from `public/` so it is
@@ -18,7 +18,7 @@ withDefaults(
 )
 
 // Bound (not static) so Vite resolves it at runtime from `public/` rather than
-// trying to bundle it at build time — the app still builds before the file is
+// trying to bundle it at build time; the app still builds before the file is
 // added. Save a transparent PNG as `public/stethoscope.png`.
 const stethoscopeSrc = '/stethoscope.png'
 </script>

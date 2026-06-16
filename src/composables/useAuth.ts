@@ -18,7 +18,7 @@ export function useAuth() {
   }
 
   /**
-   * Register, then send the user to the login screen with a success flag —
+   * Register, then send the user to the login screen with a success flag;
    * the backend creates the account but does not return a session.
    */
   async function register(payload: RegisterRequestDto): Promise<void> {

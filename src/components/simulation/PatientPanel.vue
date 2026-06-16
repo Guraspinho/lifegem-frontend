@@ -2,12 +2,12 @@
 /**
  * Right-hand patient panel. Mirrors the session lifecycle:
  *   generating → animated "generating patient" loader
- *   active     → patient profile + live vitals from `session_started`
+ *   active     → patient profile + live vitals from `session:start`
  *   ended      → session-ended summary
  *   error      → failure message with a retry hint
  *
  * The patient's `condition` (the diagnosis target) and evaluation fields are
- * intentionally not shown here — the trainee has to reach the diagnosis.
+ * intentionally not shown here; the trainee has to reach the diagnosis.
  */
 import { computed } from 'vue'
 import ScoreEvaluation from './ScoreEvaluation.vue'

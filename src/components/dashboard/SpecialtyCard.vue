@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Interactive specialty card — the primary call-to-action on the dashboard.
+ * Interactive specialty card, the primary call-to-action on the dashboard.
  * Lightly glassmorphic, with a coloured accent driven by `specialty.accent`,
  * a hover lift, a difficulty badge, an estimated duration and a Start button.
  *

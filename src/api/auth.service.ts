@@ -18,7 +18,7 @@ export const authService = {
       .then((res) => res.data)
   },
 
-  /** Creates the account. Does NOT start a session — the user logs in after. */
+  /** Creates the account. Does NOT start a session, the user logs in after. */
   register(payload: RegisterRequestDto): Promise<RegisterResponseDto> {
     return apiClient
       .post<RegisterResponseDto>('/auth/register', payload)
@@ -35,7 +35,7 @@ export const authService = {
   /**
    * Revoke the session server-side: clears the refresh cookie and invalidates
    * the stored refresh token. Requires the access token (attached by the axios
-   * interceptor). Returns nothing meaningful — callers clear local state too.
+   * interceptor). Returns nothing meaningful; callers clear local state too.
    */
   logout(): Promise<void> {
     return apiClient.post('/auth/logout').then(() => undefined)

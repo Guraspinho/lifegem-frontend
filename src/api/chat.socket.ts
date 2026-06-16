@@ -17,8 +17,8 @@ const wsURL =
 
 /**
  * Create a (not-yet-connected) socket for a simulation session. The caller owns
- * the lifecycle: wire listeners, then `connect()`, and `disconnect()` when done
- * — disconnecting is what signals the backend to end and analyse the session.
+ * the lifecycle: wire listeners, then `connect()`, and `disconnect()` when done.
+ * Disconnecting is what signals the backend to end and analyse the session.
  */
 export function createChatSocket(): Socket {
   return io(wsURL, {

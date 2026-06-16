@@ -1,5 +1,5 @@
 /**
- * Auth contracts — kept 1:1 with the backend NestJS DTOs so the forms and
+ * Auth contracts, kept 1:1 with the backend NestJS DTOs so the forms and
  * client validation stay compatible. Limits below mirror the `class-validator`
  * decorators on the request DTOs.
  */
@@ -16,17 +16,17 @@ export interface RegisterRequestDto {
   password: string
 }
 
-/** POST /auth/login — refresh token is set as an httpOnly cookie server-side. */
+/** POST /auth/login: refresh token is set as an httpOnly cookie server-side. */
 export interface LoginResponseDto {
   accessToken: string
 }
 
-/** POST /auth/refresh — exchanges the refresh cookie for a new access token. */
+/** POST /auth/refresh: exchanges the refresh cookie for a new access token. */
 export interface RefreshResponseDto {
   accessToken: string
 }
 
-/** POST /auth/register — returns the created user, NOT an auth session. */
+/** POST /auth/register: returns the created user, NOT an auth session. */
 export interface RegisterResponseDto {
   id: number
   email: string
