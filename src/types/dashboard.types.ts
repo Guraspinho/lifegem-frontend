@@ -25,17 +25,6 @@ export interface Specialty {
   icon: 'trauma' | 'cardiology' | 'emergency'
 }
 
-export interface RecentSession {
-  id: string
-  specialty: string
-  /** The simulated patient's presenting condition. */
-  condition: string
-  score: number
-  /** Human-readable completion date. */
-  date: string
-  accent: SpecialtyAccent
-}
-
 export interface DashboardStat {
   id: string
   label: string
