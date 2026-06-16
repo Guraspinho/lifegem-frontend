@@ -23,33 +23,57 @@ defineEmits<{ logout: [] }>()
     <div
       class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
     >
-      <!-- Brand -->
-      <div class="flex items-center gap-3">
-        <span
-          class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-sm shadow-indigo-500/30"
+      <!-- Brand + nav -->
+      <div class="flex items-center gap-3 sm:gap-6">
+        <RouterLink
+          :to="{ name: 'home' }"
+          class="flex items-center gap-3"
         >
-          <svg
-            class="h-5 w-5 text-white"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+          <span
+            class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-sm shadow-indigo-500/30 transition-transform hover:scale-105"
           >
-            <path d="M3 12h3.5l2-6 3.5 12 2.5-7 1.5 1H21" />
-          </svg>
-        </span>
-        <div class="leading-tight">
-          <p
-            class="text-base font-semibold tracking-tight text-slate-900 dark:text-white"
+            <svg
+              class="h-5 w-5 text-white"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M3 12h3.5l2-6 3.5 12 2.5-7 1.5 1H21" />
+            </svg>
+          </span>
+          <div class="leading-tight">
+            <p
+              class="text-base font-semibold tracking-tight text-slate-900 dark:text-white"
+            >
+              LifeGem
+            </p>
+            <p
+              class="hidden text-xs text-slate-500 dark:text-slate-400 lg:block"
+            >
+              Interactive Medical Training Simulator
+            </p>
+          </div>
+        </RouterLink>
+
+        <nav class="hidden items-center gap-1 sm:flex">
+          <RouterLink
+            :to="{ name: 'home' }"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            active-class="!bg-indigo-50 !text-indigo-600 dark:!bg-indigo-500/10 dark:!text-indigo-300"
           >
-            LifeGem
-          </p>
-          <p class="hidden text-xs text-slate-500 dark:text-slate-400 sm:block">
-            Interactive Medical Training Simulator
-          </p>
-        </div>
+            Dashboard
+          </RouterLink>
+          <RouterLink
+            :to="{ name: 'sessions' }"
+            class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            active-class="!bg-indigo-50 !text-indigo-600 dark:!bg-indigo-500/10 dark:!text-indigo-300"
+          >
+            Sessions
+          </RouterLink>
+        </nav>
       </div>
 
       <!-- User cluster -->

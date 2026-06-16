@@ -13,10 +13,10 @@ import { useUser } from '@/composables/useUser'
 import DashboardNav from '@/components/dashboard/DashboardNav.vue'
 import WelcomeHero from '@/components/dashboard/WelcomeHero.vue'
 import SpecialtyCard from '@/components/dashboard/SpecialtyCard.vue'
-import RecentSessions from '@/components/dashboard/RecentSessions.vue'
+import DashboardInsights from '@/components/dashboard/DashboardInsights.vue'
 import StatCard from '@/components/dashboard/StatCard.vue'
 import DevStatusNote from '@/components/dashboard/DevStatusNote.vue'
-import { recentSessions, specialties } from '@/data/dashboard'
+import { specialties } from '@/data/dashboard'
 import type { DashboardStat, DashboardUser } from '@/types/dashboard.types'
 
 const { logout } = useAuth()
@@ -134,7 +134,7 @@ function startSession(specialtyId: string): void {
         </section>
 
         <div class="lg:col-span-1">
-          <RecentSessions :sessions="recentSessions" />
+          <DashboardInsights />
         </div>
       </div>
 
