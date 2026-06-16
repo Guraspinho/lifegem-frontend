@@ -15,13 +15,15 @@ import WelcomeHero from '@/components/dashboard/WelcomeHero.vue'
 import SpecialtyCard from '@/components/dashboard/SpecialtyCard.vue'
 import DashboardInsights from '@/components/dashboard/DashboardInsights.vue'
 import StatCard from '@/components/dashboard/StatCard.vue'
-import DevStatusNote from '@/components/dashboard/DevStatusNote.vue'
+import AppFooter from '@/components/common/AppFooter.vue'
 import { specialties } from '@/data/dashboard'
 import type { DashboardStat, DashboardUser } from '@/types/dashboard.types'
 
 const { logout } = useAuth()
-const { user, fetchUser } = useUser()
+const { user, fetchUser, error: userError } = useUser()
 const router = useRouter()
+
+const statsLoading = computed(() => !user.value && !userError.value)
 
 onMounted(fetchUser)
 
@@ -84,11 +86,7 @@ function startSession(specialtyId: string): void {
 
 <template>
   <div class="min-h-screen bg-slate-100 dark:bg-slate-950">
-    <DashboardNav
-      :user="navUser"
-      :notifications="3"
-      @logout="logout"
-    />
+    <DashboardNav :user="navUser" @logout="logout" />
 
     <main
       class="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
@@ -123,13 +121,23 @@ function startSession(specialtyId: string): void {
       <!-- Analytics + history -->
       <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <section class="lg:col-span-2">
-          <h2
-            class="mb-4 text-lg font-semibold tracking-tight text-slate-900 dark:text-white"
-          >
-            Your performance
-          </h2>
+          <div class="mb-4">
+            <h2
+              class="text-lg font-semibold tracking-tight text-slate-900 dark:text-white"
+            >
+              Your performance
+            </h2>
+            <p class="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
+              Your lifetime training metrics across every completed simulation.
+            </p>
+          </div>
           <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <StatCard v-for="stat in stats" :key="stat.id" :stat="stat" />
+            <StatCard
+              v-for="stat in stats"
+              :key="stat.id"
+              :stat="stat"
+              :loading="statsLoading"
+            />
           </div>
         </section>
 
@@ -137,8 +145,8 @@ function startSession(specialtyId: string): void {
           <DashboardInsights />
         </div>
       </div>
-
-      <DevStatusNote />
     </main>
+
+    <AppFooter />
   </div>
 </template>

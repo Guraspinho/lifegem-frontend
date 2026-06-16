@@ -10,12 +10,15 @@ import StatCard from '@/components/dashboard/StatCard.vue'
 import ScoreTrendChart from '@/components/sessions/ScoreTrendChart.vue'
 import SessionCard from '@/components/sessions/SessionCard.vue'
 import SessionDetailModal from '@/components/sessions/SessionDetailModal.vue'
+import AppFooter from '@/components/common/AppFooter.vue'
 import { specialtyAccent, specialtyLabel } from '@/utils/sessions'
 import type { DashboardStat, DashboardUser, SpecialtyAccent } from '@/types/dashboard.types'
 
 const router = useRouter()
 const { logout } = useAuth()
-const { user, fetchUser } = useUser()
+const { user, fetchUser, error: userError } = useUser()
+
+const statsLoading = computed(() => !user.value && !userError.value)
 const {
   sessions,
   isLoading,
@@ -203,7 +206,12 @@ function startTraining(): void {
       </div>
 
       <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard v-for="stat in stats" :key="stat.id" :stat="stat" />
+        <StatCard
+          v-for="stat in stats"
+          :key="stat.id"
+          :stat="stat"
+          :loading="statsLoading"
+        />
       </div>
 
       <div class="grid grid-cols-1 gap-5 lg:grid-cols-5">
@@ -400,6 +408,8 @@ function startTraining(): void {
         </template>
       </section>
     </main>
+
+    <AppFooter />
 
     <SessionDetailModal
       :open="showDetail"
