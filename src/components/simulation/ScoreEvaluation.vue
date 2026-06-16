@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Live diagnostic-accuracy evaluation — a chess-engine-style readout that
+ * Live diagnostic-accuracy evaluation: a chess-engine-style readout that
  * updates after every patient turn. Shows the current score, the change vs the
  * previous turn, an animated fill bar, a small trend sparkline, and the latest
  * one-line coaching feedback.

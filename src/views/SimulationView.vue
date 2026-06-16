@@ -3,18 +3,21 @@
  * Live simulation view (`/simulation/:specialty`).
  *
  * On mount it opens the Socket.IO session for the chosen specialty: connect →
- * `start_session` → wait for `session_started` (loader) → live chat. The chat
+ * `start_session` → wait for `session:start` (loader) → live chat. The chat
  * sits on the left, the patient monitor/vitals on the right, and the animated
  * heartbeat lives in the header's top-right corner.
  *
  * The specialty is resolved from the dashboard data by route param so we can
  * show its title/accent; unknown specialties bounce back to the dashboard.
  */
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SimulationHeader from '@/components/simulation/SimulationHeader.vue'
 import ChatPanel from '@/components/simulation/ChatPanel.vue'
 import PatientPanel from '@/components/simulation/PatientPanel.vue'
+import FinalDiagnosisPanel from '@/components/simulation/FinalDiagnosisPanel.vue'
+import EndSessionDialog from '@/components/simulation/EndSessionDialog.vue'
+import SessionResultsModal from '@/components/simulation/SessionResultsModal.vue'
 import { useChatSession } from '@/composables/useChatSession'
 import { specialties } from '@/data/dashboard'
 import { sessionSpecialtyById } from '@/data/simulation'
@@ -38,10 +41,23 @@ const {
   scoreDelta,
   scoreHistory,
   feedback,
+  finalDiagnosis,
+  hasDiagnosis,
+  sessionResult,
+  sessionScores,
+  analyzing,
+  analysisError,
   start,
   sendMessage,
+  submitDiagnosis,
+  requestEnd,
   end,
 } = useChatSession()
+
+/** Shown when the trainee ends a live session without a saved diagnosis. */
+const showEndWarning = ref(false)
+/** Shown once the end is requested: loading → analysis report. */
+const showResults = ref(false)
 
 onMounted(() => {
   const backendSpecialty = specialty.value
@@ -57,6 +73,31 @@ onMounted(() => {
 })
 
 function handleEnd(): void {
+  // Warn before ending a live session with no diagnosis on record. Other
+  // phases (ended/error) skip the warning; there's nothing left to record.
+  if (phase.value === 'active' && !hasDiagnosis.value) {
+    showEndWarning.value = true
+    return
+  }
+  beginEnd()
+}
+
+/**
+ * Request the server analysis and open the results window. If there's no live
+ * session to analyse (e.g. an error state), just leave straight away.
+ */
+function beginEnd(): void {
+  showEndWarning.value = false
+  if (requestEnd()) {
+    showResults.value = true
+  } else {
+    leaveSession()
+  }
+}
+
+/** Tear the session down and return to the dashboard. */
+function leaveSession(): void {
+  showResults.value = false
   end()
   void router.push({ name: 'home' })
 }
@@ -93,22 +134,48 @@ function handleRetry(): void {
         />
       </div>
 
-      <!-- Patient panel: right -->
-      <div class="min-h-0 lg:col-span-1">
-        <PatientPanel
-          :phase="phase"
-          :specialty-title="specialty.title"
-          :accent="specialty.accent"
-          :patient="patient"
-          :score="score"
-          :score-delta="scoreDelta"
-          :score-history="scoreHistory"
-          :feedback="feedback"
-          :error="error"
-          @retry="handleRetry"
-          @exit="handleEnd"
+      <!-- Right column: patient monitor + editable final diagnosis -->
+      <div class="flex min-h-0 flex-col gap-5 lg:col-span-1">
+        <div class="min-h-0 flex-1">
+          <PatientPanel
+            :phase="phase"
+            :specialty-title="specialty.title"
+            :accent="specialty.accent"
+            :patient="patient"
+            :score="score"
+            :score-delta="scoreDelta"
+            :score-history="scoreHistory"
+            :feedback="feedback"
+            :error="error"
+            @retry="handleRetry"
+            @exit="handleEnd"
+          />
+        </div>
+
+        <FinalDiagnosisPanel
+          :submitted="finalDiagnosis"
+          :disabled="phase !== 'active'"
+          @submit="submitDiagnosis"
         />
       </div>
     </main>
+
+    <!-- Warn before ending a live session with no diagnosis on record. -->
+    <EndSessionDialog
+      :open="showEndWarning"
+      @confirm="beginEnd"
+      @cancel="showEndWarning = false"
+    />
+
+    <!-- End-of-session analytics: loads, then shows the full report. -->
+    <SessionResultsModal
+      :open="showResults"
+      :loading="analyzing"
+      :result="sessionResult"
+      :scores="sessionScores"
+      :error-message="analysisError"
+      :specialty-title="specialty.title"
+      @close="leaveSession"
+    />
   </div>
 </template>

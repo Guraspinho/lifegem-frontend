@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * LifeGem dashboard — the authenticated landing page (protected `/` route).
+ * LifeGem dashboard, the authenticated landing page (protected `/` route).
  *
  * Assembles the dashboard shell from focused components and feeds them static
  * demo data from `@/data/dashboard` while the backend is still in progress.

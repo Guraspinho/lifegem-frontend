@@ -1,7 +1,7 @@
 /**
  * Dashboard view-model contracts. These describe the shape of the data the
  * dashboard renders. For now the values are hardcoded demo data (see
- * `@/data/dashboard`) — once the backend exists these same shapes will be
+ * `@/data/dashboard`); once the backend exists these same shapes will be
  * populated from API responses, so keep them framework-agnostic.
  */
 

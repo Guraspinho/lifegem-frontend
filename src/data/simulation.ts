@@ -46,7 +46,7 @@ export const quickActions: QuickAction[] = [
   {
     id: 'exam',
     label: 'Physical exam',
-    prompt: "I'd like to perform a brief physical examination — is that alright?",
+    prompt: "I'd like to perform a brief physical examination, is that alright?",
     icon: 'exam',
   },
   {

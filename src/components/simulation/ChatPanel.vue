@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * The consultation chat — the left half of the simulation. Renders the message
+ * The consultation chat, the left half of the simulation. Renders the message
  * log, the quick-action row, and the composer. Auto-scrolls to the newest
  * message and keeps the textarea focused while the session is live.
  */
@@ -12,9 +12,9 @@ import type { ChatMessage, QuickAction } from '@/types/chat.types'
 
 const props = defineProps<{
   messages: ChatMessage[]
-  /** Chat is live (patient generated) — enables input + quick actions. */
+  /** Chat is live (patient generated); enables input + quick actions. */
   active: boolean
-  /** True while awaiting the patient's reply — composer shows a busy state. */
+  /** True while awaiting the patient's reply; composer shows a busy state. */
   thinking?: boolean
 }>()
 

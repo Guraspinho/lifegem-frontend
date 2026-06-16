@@ -7,10 +7,15 @@ import type {
   ChatRole,
   PatientProfile,
   PatientVitals,
+  SessionEndPayload,
   SessionPhase,
+  SessionResult,
   SessionSpecialty,
   SessionStartedPayload,
 } from '@/types/chat.types'
+
+/** How long to wait for the server's analysis before showing a timeout. */
+const ANALYSIS_TIMEOUT_MS = 60_000
 
 /** Monotonic id source for chat bubbles (unique within a page session). */
 let messageSeq = 0
@@ -20,7 +25,7 @@ const nextId = (): string => `m${++messageSeq}`
  * Owns one live simulation session: the Socket.IO connection, the message log,
  * and the lifecycle phase that drives the UI (loader → active → ended).
  *
- * View-scoped on purpose — instantiate it in `SimulationView` and it tears the
+ * View-scoped on purpose: instantiate it in `SimulationView` and it tears the
  * socket down on unmount. Disconnecting is meaningful to the backend: it ends
  * the session and kicks off the analysis step.
  */
@@ -30,9 +35,9 @@ export function useChatSession() {
   const error = ref<string | null>(null)
   /** True while we're awaiting the patient's reply to the latest message. */
   const patientThinking = ref(false)
-  /** The generated patient's profile + vitals; null until `session_started`. */
+  /** The generated patient's profile + vitals; null until `session:start`. */
   const patient = ref<PatientProfile | null>(null)
-  /** Diagnostic-accuracy score per turn (0–100) — drives the live evaluation. */
+  /** Diagnostic-accuracy score per turn (0–100); drives the live evaluation. */
   const scoreHistory = ref<number[]>([])
 
   /** Latest accuracy score, or null before the session starts. */
@@ -48,7 +53,28 @@ export function useChatSession() {
   /** Latest one-line coaching feedback from the patient turn. */
   const feedback = computed(() => patient.value?.shortFeedback ?? null)
 
+  /**
+   * The last-submitted final diagnosis. Editable for the whole session; the
+   * server persists this value on disconnect. Empty means none was submitted.
+   */
+  const finalDiagnosis = ref('')
+  /** True once a non-empty diagnosis has been submitted to the server. */
+  const hasDiagnosis = computed(() => finalDiagnosis.value.trim().length > 0)
+
+  /** The server's end-of-session analysis; null until `session:end` arrives. */
+  const sessionResult = ref<SessionResult | null>(null)
+  /** Per-turn accuracy scores for the results chart. */
+  const sessionScores = ref<number[]>([])
+  /** Set if the analysis request times out (the server failed silently). */
+  const analysisError = ref<string | null>(null)
+  /** True while waiting for the analysis after requesting the end. */
+  const analyzing = computed(
+    () => phase.value === 'analyzing' && !sessionResult.value,
+  )
+
   let socket: Socket | null = null
+  /** Pending analysis-timeout handle, cleared on result or teardown. */
+  let analysisTimer: ReturnType<typeof setTimeout> | null = null
   /** Id of the pending patient bubble awaiting a reply, if any. */
   let streamingId: string | null = null
 
@@ -66,7 +92,7 @@ export function useChatSession() {
   const isGenerating = computed(
     () => phase.value === 'connecting' || phase.value === 'generating',
   )
-  /** The simulated patient is "alive" once generated — drives the heartbeat. */
+  /** The simulated patient is "alive" once generated; drives the heartbeat. */
   const patientAlive = computed(() => phase.value === 'active')
 
   function pushMessage(role: ChatRole, content: string): ChatMessage {
@@ -96,17 +122,17 @@ export function useChatSession() {
       s.emit('start_session', { specialty: currentSpecialty })
     })
 
-    // Patient generation finished — chat is live. Capture the patient profile
+    // Patient generation finished, chat is live. Capture the patient profile
     // (incl. the opening accuracy score) and show the opening line.
-    s.on('session_started', (payload: SessionStartedPayload) => {
+    s.on('session:start', (payload: SessionStartedPayload) => {
       phase.value = 'active'
       if (payload?.patient) applyPatientUpdate(payload.patient)
-      pushMessage('system', 'Consultation started — the patient is ready.')
+      pushMessage('system', 'Consultation started. The patient is ready.')
       if (payload?.message) pushMessage('patient', payload.message)
     })
 
-    // Reply complete — fill the pending bubble, refresh vitals + score.
-    s.on('chat:done', (payload: ChatDonePayload) => {
+    // Reply complete: fill the pending bubble, refresh vitals + score.
+    s.on('message:done', (payload: ChatDonePayload) => {
       patientThinking.value = false
       const target = streamingMessage()
       if (target) {
@@ -118,6 +144,17 @@ export function useChatSession() {
       }
       streamingId = null
       if (payload?.patient) applyPatientUpdate(payload.patient)
+    })
+
+    // Analysis complete: store the report. The socket stays open until the
+    // user closes the results window (which calls `end`).
+    s.on('session:end', (payload: SessionEndPayload) => {
+      if (analysisTimer) {
+        clearTimeout(analysisTimer)
+        analysisTimer = null
+      }
+      if (payload?.response) sessionResult.value = payload.response
+      sessionScores.value = Array.isArray(payload?.scores) ? payload.scores : []
     })
 
     s.on('chat:error', (payload: { message?: unknown }) => {
@@ -180,8 +217,47 @@ export function useChatSession() {
     patientThinking.value = true
   }
 
-  /** End the session: disconnecting tells the backend to wrap up + analyse. */
+  /**
+   * Save the working final diagnosis. Pushes the latest text to the server
+   * (which persists it on disconnect) and updates the local copy. May be empty.
+   */
+  function submitDiagnosis(text: string): void {
+    if (!socket || phase.value !== 'active') return
+    const value = text.trim()
+    finalDiagnosis.value = value
+    socket.emit('final_diagnosis', value)
+  }
+
+  /**
+   * Request the end-of-session analysis. Emits `session_end` and moves into the
+   * "analyzing" phase; the report arrives on `session:end`. Returns false when
+   * there's nothing to analyse (no live session) so the caller can just leave.
+   */
+  function requestEnd(): boolean {
+    if (!socket || phase.value !== 'active') return false
+    analysisError.value = null
+    sessionResult.value = null
+    phase.value = 'analyzing'
+    socket.emit('session_end')
+
+    // The backend swallows analysis errors (logs only), so guard with a timeout
+    // rather than waiting forever on a result that may never come.
+    analysisTimer = setTimeout(() => {
+      analysisTimer = null
+      if (!sessionResult.value) {
+        analysisError.value =
+          'The analysis is taking longer than expected. You can close this and try again later.'
+      }
+    }, ANALYSIS_TIMEOUT_MS)
+    return true
+  }
+
+  /** Close the socket. Called once the user dismisses the results window. */
   function end(): void {
+    if (analysisTimer) {
+      clearTimeout(analysisTimer)
+      analysisTimer = null
+    }
     if (socket) {
       socket.disconnect()
       socket.removeAllListeners()
@@ -203,12 +279,20 @@ export function useChatSession() {
     scoreDelta,
     scoreHistory,
     feedback,
+    finalDiagnosis,
+    hasDiagnosis,
+    sessionResult,
+    sessionScores,
+    analyzing,
+    analysisError,
     isConnected,
     isGenerating,
     patientAlive,
     // actions
     start,
     sendMessage,
+    submitDiagnosis,
+    requestEnd,
     end,
   }
 }

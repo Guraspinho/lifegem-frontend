@@ -1,5 +1,5 @@
 /**
- * User contract — kept 1:1 with the backend NestJS `GetUserResponseDto`.
+ * User contract, kept 1:1 with the backend NestJS `GetUserResponseDto`.
  *
  * The aggregate metrics are nullable: a freshly registered user with no
  * completed simulations has `null` for every rate (there is nothing to average

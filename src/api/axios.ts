@@ -13,7 +13,7 @@ const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api'
  * automatically because every request sets `withCredentials: true`.
  *
  * The auth store is the source of truth and calls `setAccessToken` to keep
- * this module in sync — that indirection keeps `axios.ts` free of any store
+ * this module in sync; that indirection keeps `axios.ts` free of any store
  * import, avoiding a circular dependency.
  */
 let accessToken: string | null = null
@@ -105,8 +105,8 @@ apiClient.interceptors.response.use(
  * Shape of the backend's error responses (see the NestJS `HttpExceptionFilter`):
  *   { statusCode, timestamp, path, error }
  * where `error` is either a plain string (Prisma/custom/fallback cases) or the
- * thrown `HttpException`'s response object, e.g. `{ message, statusCode, error }`
- * — and `message` there may be a string or a string[] (class-validator).
+ * thrown `HttpException`'s response object, e.g. `{ message, statusCode, error }`,
+ * where `message` may be a string or a string[] (class-validator).
  */
 interface BackendErrorEnvelope {
   statusCode?: number

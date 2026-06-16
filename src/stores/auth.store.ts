@@ -53,7 +53,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Create an account. The backend returns the new user but no token, so this
-   * does NOT authenticate — the caller should send the user to log in.
+   * does NOT authenticate; the caller should send the user to log in.
    */
   async function register(
     payload: RegisterRequestDto,
@@ -82,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /**
    * Log out: revoke the session server-side (clears the refresh cookie), then
-   * drop local auth state. The server call is best-effort — even if it fails
+   * drop local auth state. The server call is best-effort; even if it fails
    * (network down, token already expired) we still clear locally so the user
    * is never stuck "logged in" on the client.
    */
