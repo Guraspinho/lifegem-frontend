@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * Hero-style welcome card. Uses the same indigo→violet brand gradient as the
- * auth brand panel, layered over a faint dotted "monitoring grid" pattern and a
- * soft ambient glow for a calm hospital-dashboard atmosphere.
- */
 defineProps<{ name: string }>()
 </script>
 
@@ -11,12 +6,10 @@ defineProps<{ name: string }>()
   <section
     class="relative overflow-hidden rounded-3xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900"
   >
-    <!-- Subtle dotted monitoring grid -->
     <div
       class="pointer-events-none absolute inset-0 opacity-[0.4] [background-image:radial-gradient(theme(colors.indigo.200)_1px,transparent_1px)] [background-size:22px_22px] dark:opacity-[0.06]"
       aria-hidden="true"
     />
-    <!-- Ambient glow -->
     <div
       class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-indigo-300/30 blur-3xl dark:bg-indigo-500/10"
       aria-hidden="true"

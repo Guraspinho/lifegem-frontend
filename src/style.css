@@ -1,10 +1,5 @@
 @import 'tailwindcss';
 
-/*
- * Class-based dark mode: `.dark` on a parent enables `dark:` variants.
- * (Tailwind v4 defaults to the `prefers-color-scheme` media strategy; we opt
- * into a class strategy so the app can offer a manual toggle later.)
- */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {

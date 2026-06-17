@@ -10,10 +10,8 @@ import { hasMinLength, isRequired, isValidEmail } from '@/utils/validators'
 const { login, isLoading, error, resetError } = useAuth()
 const route = useRoute()
 
-// Show a success notice when arriving here right after registering.
 const justRegistered = ref(route.query.registered === '1')
 
-// Drop any stale error carried over from another auth screen.
 onMounted(resetError)
 
 const form = reactive({ email: '', password: '' })
@@ -22,7 +20,6 @@ const errors = reactive<{ email: string | null; password: string | null }>({
   password: null,
 })
 
-// Only surface field errors after the first submit attempt, then live-validate.
 const submitted = ref(false)
 
 function validateField(field: 'email' | 'password'): void {
@@ -56,14 +53,13 @@ async function onSubmit(): Promise<void> {
   try {
     await login({ email: form.email.trim(), password: form.password })
   } catch {
-    // Server-side error is surfaced via the `error` ref below.
+    void 0
   }
 }
 </script>
 
 <template>
   <form novalidate class="space-y-5" @submit.prevent="onSubmit">
-    <!-- Post-registration success banner -->
     <p
       v-if="justRegistered"
       class="rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
@@ -72,7 +68,6 @@ async function onSubmit(): Promise<void> {
       Account created successfully. Please log in.
     </p>
 
-    <!-- Server error banner -->
     <p
       v-if="error"
       class="rounded-xl bg-red-50 px-4 py-2.5 text-sm font-medium text-red-600 dark:bg-red-500/10 dark:text-red-400"

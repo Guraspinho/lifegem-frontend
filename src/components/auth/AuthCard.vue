@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/**
- * Header + body + footer wrapper for the form side of an auth screen. Keeps
- * the title/subtitle typography consistent across Login and Register.
- */
 defineProps<{
   title: string
   subtitle?: string

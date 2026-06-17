@@ -1,11 +1,3 @@
-/**
- * Hardcoded demo data for the dashboard.
- *
- * Backend integration is incomplete, so the dashboard renders these static
- * placeholders to look production-ready. When the API lands, replace these
- * exports with data fetched into a store/composable; the shapes already match
- * `@/types/dashboard.types`, so the components won't need to change.
- */
 import type { Specialty } from '@/types/dashboard.types'
 
 export const specialties: Specialty[] = [

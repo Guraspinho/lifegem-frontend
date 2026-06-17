@@ -13,7 +13,6 @@ import {
 
 const { register, isLoading, error, resetError } = useAuth()
 
-// Drop any stale error carried over from another auth screen.
 onMounted(resetError)
 
 type Field = 'email' | 'name' | 'surname' | 'password'
@@ -85,7 +84,7 @@ async function onSubmit(): Promise<void> {
       password: form.password,
     })
   } catch {
-    // Server-side error is surfaced via the `error` ref below.
+    void 0
   }
 }
 </script>
