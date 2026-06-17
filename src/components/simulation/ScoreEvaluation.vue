@@ -1,23 +1,11 @@
 <script setup lang="ts">
-/**
- * Live diagnostic-accuracy evaluation: a chess-engine-style readout that
- * updates after every patient turn. Shows the current score, the change vs the
- * previous turn, an animated fill bar, a small trend sparkline, and the latest
- * one-line coaching feedback.
- *
- * `answerAccuracy` is expected on a 0–100 scale.
- */
 import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    /** Current accuracy score (0–100), or null before the first turn. */
     score: number | null
-    /** Change vs the previous turn, or null on the opening turn. */
     delta?: number | null
-    /** Score history for the trend sparkline. */
     history?: number[]
-    /** Latest one-line feedback from the patient turn. */
     feedback?: string | null
   }>(),
   { delta: null, history: () => [], feedback: null },
@@ -26,7 +14,6 @@ const props = withDefaults(
 const hasScore = computed(() => props.score !== null)
 const clamped = computed(() => Math.max(0, Math.min(100, props.score ?? 0)))
 
-/** Colour grade by score band. */
 const tone = computed(() => {
   const s = clamped.value
   if (s >= 75) return { text: 'text-emerald-600 dark:text-emerald-400', bar: 'bg-emerald-500' }
@@ -40,7 +27,6 @@ const deltaSign = computed(() => {
   return props.delta > 0 ? 'up' : 'down'
 })
 
-/** Build an SVG polyline for the sparkline, normalised to the 0–100 range. */
 const sparkPoints = computed(() => {
   const h = props.history ?? []
   if (h.length < 2) return ''
@@ -82,7 +68,6 @@ const sparkPoints = computed(() => {
         </p>
       </div>
 
-      <!-- Delta chip (chess-eval style change) -->
       <span
         v-if="deltaSign !== 'flat'"
         class="flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums"
@@ -96,7 +81,6 @@ const sparkPoints = computed(() => {
       </span>
     </div>
 
-    <!-- Score + sparkline -->
     <div class="mt-2 flex items-end justify-between gap-3">
       <p
         class="text-3xl font-semibold tabular-nums leading-none tracking-tight transition-colors duration-500"
@@ -125,7 +109,6 @@ const sparkPoints = computed(() => {
       </svg>
     </div>
 
-    <!-- Eval bar -->
     <div
       class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700"
     >
@@ -136,7 +119,6 @@ const sparkPoints = computed(() => {
       />
     </div>
 
-    <!-- Latest feedback -->
     <p
       v-if="feedback"
       class="mt-3 text-xs italic leading-relaxed text-slate-500 dark:text-slate-400"

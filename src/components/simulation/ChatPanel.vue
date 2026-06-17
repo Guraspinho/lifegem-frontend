@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * The consultation chat, the left half of the simulation. Renders the message
- * log, the quick-action row, and the composer. Auto-scrolls to the newest
- * message and keeps the textarea focused while the session is live.
- */
 import { nextTick, ref, watch } from 'vue'
 import ChatBubble from './ChatBubble.vue'
 import QuickActions from './QuickActions.vue'
@@ -12,9 +7,7 @@ import type { ChatMessage, QuickAction } from '@/types/chat.types'
 
 const props = defineProps<{
   messages: ChatMessage[]
-  /** Chat is live (patient generated); enables input + quick actions. */
   active: boolean
-  /** True while awaiting the patient's reply; composer shows a busy state. */
   thinking?: boolean
 }>()
 
@@ -35,7 +28,6 @@ function onQuickAction(action: QuickAction): void {
   emit('send', action.prompt)
 }
 
-// Enter to send, Shift+Enter for a newline.
 function onKeydown(e: KeyboardEvent): void {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
@@ -43,7 +35,6 @@ function onKeydown(e: KeyboardEvent): void {
   }
 }
 
-// Stick to the bottom as messages arrive / stream in.
 watch(
   () => props.messages.map((m) => m.content).join('|'),
   async () => {
@@ -58,7 +49,6 @@ watch(
   <section
     class="flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60"
   >
-    <!-- Panel header -->
     <div
       class="flex items-center gap-2 border-b border-slate-200/80 px-5 py-3.5 dark:border-slate-800"
     >
@@ -89,7 +79,6 @@ watch(
       </div>
     </div>
 
-    <!-- Messages -->
     <div
       ref="scroller"
       class="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5"
@@ -97,7 +86,6 @@ watch(
       <ChatBubble v-for="m in messages" :key="m.id" :message="m" />
     </div>
 
-    <!-- Composer + quick actions -->
     <div
       class="space-y-3 border-t border-slate-200/80 px-4 py-3.5 sm:px-5 dark:border-slate-800"
     >

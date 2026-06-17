@@ -1,5 +1,3 @@
-/** Tiny, dependency-free validators shared by the auth forms. */
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export const isValidEmail = (value: string): boolean =>

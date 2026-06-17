@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, useId } from 'vue'
 
-/**
- * Accessible underline input with a floating label, inline error display and an
- * optional password visibility toggle. Used by every auth form so styling +
- * a11y stay consistent in one place.
- */
 interface Props {
   modelValue: string
   label: string
@@ -34,7 +29,6 @@ const emit = defineEmits<{
 const uid = useId()
 const errorId = computed(() => `${uid}-error`)
 
-// Password fields render a show/hide toggle that swaps the input type.
 const isPassword = computed(() => props.type === 'password')
 const reveal = ref(false)
 const resolvedType = computed(() =>
@@ -49,7 +43,6 @@ const onInput = (event: Event) => {
 <template>
   <div class="space-y-1">
     <div class="relative">
-      <!-- placeholder=" " keeps :placeholder-shown accurate for the float -->
       <input
         :id="uid"
         :type="resolvedType"
@@ -72,7 +65,6 @@ const onInput = (event: Event) => {
         @blur="emit('blur')"
       />
 
-      <!-- Floating label: sits in-field when empty, floats up on focus/fill -->
       <label
         :for="uid"
         class="pointer-events-none absolute left-0 top-1 origin-left text-xs text-slate-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-sm peer-focus:top-1 peer-focus:text-xs"
@@ -94,7 +86,6 @@ const onInput = (event: Event) => {
         tabindex="-1"
         @click="reveal = !reveal"
       >
-        <!-- Eye / eye-off icon -->
         <svg
           v-if="reveal"
           class="h-5 w-5"

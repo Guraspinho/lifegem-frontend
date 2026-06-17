@@ -1,18 +1,7 @@
 <script setup lang="ts">
-/**
- * Animated ECG monitor for the simulated patient, shown in the top-right of the
- * simulation header. Reuses the ECG waveform from the brand mark and scrolls a
- * repeating trace across a small "monitor" so the patient reads as alive.
- *
- * States:
- *   alive=false  → flat line, muted (patient not generated / session ended)
- *   alive=true   → green scrolling trace + pulsing BPM readout
- */
 withDefaults(
   defineProps<{
-    /** Whether the patient is generated and the monitor should animate. */
     alive?: boolean
-    /** Displayed beats-per-minute readout. */
     bpm?: number
   }>(),
   { alive: false, bpm: 78 },
@@ -28,7 +17,6 @@ withDefaults(
         : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60'
     "
   >
-    <!-- Scrolling ECG monitor -->
     <div
       class="relative h-9 w-28 overflow-hidden rounded-md sm:w-36"
       aria-hidden="true"
@@ -44,12 +32,10 @@ withDefaults(
         stroke-linecap="round"
         stroke-linejoin="round"
       >
-        <!-- Two stitched waveforms so the scroll loops seamlessly. -->
         <path
           d="M0 18h6l2-6 4 14 3-18 2 10 3-2h7M48 18h6l2-6 4 14 3-18 2 10 3-2h7"
         />
       </svg>
-      <!-- Flatline when the patient isn't alive. -->
       <svg
         v-else
         class="h-full w-full text-slate-300 dark:text-slate-600"
@@ -64,7 +50,6 @@ withDefaults(
       </svg>
     </div>
 
-    <!-- BPM readout -->
     <div class="flex items-center gap-1.5 leading-none">
       <svg
         class="h-4 w-4 transition-colors duration-500"
@@ -103,7 +88,6 @@ withDefaults(
 </template>
 
 <style scoped>
-/* Scroll the stitched waveform left by exactly one wave so it loops cleanly. */
 .ecg-trace {
   width: 200%;
   animation: ecg-scroll 1.6s linear infinite;
@@ -117,7 +101,6 @@ withDefaults(
   }
 }
 
-/* Subtle heart pulse synced roughly to the trace cadence. */
 .heart-beat {
   animation: heart-pulse 1.6s ease-in-out infinite;
   transform-origin: center;

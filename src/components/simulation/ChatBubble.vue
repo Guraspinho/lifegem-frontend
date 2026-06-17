@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * A single chat bubble. Doctor messages align right (indigo), patient messages
- * align left (slate, with an avatar), and system notes render centered + muted.
- * A pending patient bubble with no content yet shows an animated typing dots.
- */
 import { computed } from 'vue'
 import type { ChatMessage } from '@/types/chat.types'
 
@@ -18,7 +13,6 @@ const showTyping = computed(
 </script>
 
 <template>
-  <!-- System note -->
   <div v-if="isSystem" class="flex justify-center px-2">
     <span
       class="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400"
@@ -27,13 +21,11 @@ const showTyping = computed(
     </span>
   </div>
 
-  <!-- Doctor / patient bubble -->
   <div
     v-else
     class="flex items-end gap-2.5"
     :class="isDoctor ? 'justify-end' : 'justify-start'"
   >
-    <!-- Patient avatar -->
     <span
       v-if="isPatient"
       class="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-gradient-to-br from-rose-400 to-pink-500 text-white shadow-sm"
@@ -61,7 +53,6 @@ const showTyping = computed(
           : 'rounded-bl-md bg-white text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700'
       "
     >
-      <!-- Typing indicator while the patient reply streams in -->
       <span v-if="showTyping" class="flex items-center gap-1 py-1">
         <span class="typing-dot" />
         <span class="typing-dot" />

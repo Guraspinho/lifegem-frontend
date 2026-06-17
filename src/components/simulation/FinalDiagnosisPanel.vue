@@ -1,17 +1,8 @@
 <script setup lang="ts">
-/**
- * Editable working-diagnosis window. Stays available for the whole session so
- * the trainee can draft and revise their final diagnosis as they go. The submit
- * button pushes the current text to the server (which persists it on
- * disconnect); a saved/unsaved indicator reflects whether the draft matches the
- * last submitted value.
- */
 import { computed, ref, watch } from 'vue'
 
 const props = defineProps<{
-  /** The last value submitted to the server (source of truth for "saved"). */
   submitted: string
-  /** Disabled until the session is live. */
   disabled?: boolean
 }>()
 
@@ -19,8 +10,6 @@ const emit = defineEmits<{ submit: [text: string] }>()
 
 const draft = ref(props.submitted)
 
-// Keep the draft in sync if the submitted value changes from outside (e.g. a
-// session reset), but only when the user hasn't started editing.
 watch(
   () => props.submitted,
   (value) => {
@@ -43,7 +32,6 @@ function submit(): void {
   <section
     class="flex flex-none flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/70 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60"
   >
-    <!-- Header -->
     <div
       class="flex items-center justify-between gap-2 border-b border-slate-200/80 px-4 py-3 dark:border-slate-800"
     >
@@ -72,7 +60,6 @@ function submit(): void {
         </h2>
       </div>
 
-      <!-- Saved / unsaved indicator -->
       <span
         v-if="!disabled"
         class="flex items-center gap-1.5 text-xs font-medium"
@@ -98,7 +85,6 @@ function submit(): void {
       </span>
     </div>
 
-    <!-- Editor -->
     <div class="flex flex-col gap-2.5 p-4">
       <textarea
         v-model="draft"
