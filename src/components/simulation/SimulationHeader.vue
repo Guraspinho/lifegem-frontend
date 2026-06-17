@@ -1,16 +1,10 @@
 <script setup lang="ts">
-/**
- * Sticky header for the live simulation. Carries the LifeGem brand + the active
- * specialty on the left, the animated patient heartbeat monitor on the right,
- * and an "End session" action that tears down the socket.
- */
 import PatientHeartbeat from './PatientHeartbeat.vue'
 import type { SpecialtyAccent } from '@/types/dashboard.types'
 
 defineProps<{
   specialtyTitle: string
   accent: SpecialtyAccent
-  /** Animate the monitor once the patient is generated. */
   patientAlive: boolean
   bpm?: number
 }>()
@@ -31,7 +25,6 @@ const ACCENT_DOT: Record<SpecialtyAccent, string> = {
     <div
       class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
     >
-      <!-- Brand + specialty -->
       <div class="flex items-center gap-3">
         <RouterLink
           :to="{ name: 'home' }"
@@ -68,7 +61,6 @@ const ACCENT_DOT: Record<SpecialtyAccent, string> = {
         </div>
       </div>
 
-      <!-- Patient monitor + end session -->
       <div class="flex items-center gap-2 sm:gap-3">
         <PatientHeartbeat :alive="patientAlive" :bpm="bpm" />
 

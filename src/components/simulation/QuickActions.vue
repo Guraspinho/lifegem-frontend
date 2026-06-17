@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/**
- * Horizontal row of one-tap clinical prompts shown above the composer. Tapping
- * one emits its prepared doctor message. Disabled until the chat is live.
- */
 import type { QuickAction } from '@/types/chat.types'
 
 defineProps<{

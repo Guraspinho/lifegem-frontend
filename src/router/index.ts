@@ -1,12 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 
-// Route-level meta flags drive the global guard below.
 declare module 'vue-router' {
   interface RouteMeta {
-    /** Requires an authenticated session; redirects to /login otherwise. */
     requiresAuth?: boolean
-    /** Only for unauthenticated users; redirects authed users to home. */
     guestOnly?: boolean
   }
 }
@@ -44,15 +41,10 @@ const router = createRouter({
       component: () => import('@/views/RegisterView.vue'),
       meta: { guestOnly: true },
     },
-    // Unknown routes fall back to home (which itself guards for auth).
     { path: '/:pathMatch(.*)*', redirect: { name: 'home' } },
   ],
 })
 
-/**
- * Global auth guard. The session is restored before mount (see main.ts), so by
- * the time navigation happens `isAuthenticated` reflects the real state.
- */
 router.beforeEach((to) => {
   const auth = useAuthStore()
 

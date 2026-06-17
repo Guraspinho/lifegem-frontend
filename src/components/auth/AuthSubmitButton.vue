@@ -1,8 +1,4 @@
 <script setup lang="ts">
-/**
- * Primary form submit button with a built-in loading spinner. Disables itself
- * while loading (or when the parent passes `disabled`) to prevent double submit.
- */
 withDefaults(
   defineProps<{
     loading?: boolean

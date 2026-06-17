@@ -1,12 +1,4 @@
 <script setup lang="ts">
-/**
- * Interactive specialty card, the primary call-to-action on the dashboard.
- * Lightly glassmorphic, with a coloured accent driven by `specialty.accent`,
- * a hover lift, a difficulty badge, an estimated duration and a Start button.
- *
- * Accent classes are written out in full (no string interpolation) so Tailwind's
- * JIT compiler can see every utility at build time.
- */
 import { computed } from 'vue'
 import type { Specialty, SpecialtyAccent } from '@/types/dashboard.types'
 
@@ -78,13 +70,11 @@ const difficultyClass = computed(
     class="group relative flex min-h-[22rem] flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/70 p-6 shadow-sm ring-1 ring-transparent backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900/60 dark:hover:shadow-black/30"
     :class="accent.ring"
   >
-    <!-- Accent top bar -->
     <div
       class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r opacity-80"
       :class="accent.topBar"
       aria-hidden="true"
     />
-    <!-- Soft corner glow on hover -->
     <div
       class="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"
       :class="accent.glow"
@@ -92,12 +82,10 @@ const difficultyClass = computed(
     />
 
     <div class="relative flex items-start justify-between gap-3">
-      <!-- Specialty icon -->
       <span
         class="flex h-14 w-14 items-center justify-center rounded-2xl ring-1 transition-transform duration-300 group-hover:scale-105"
         :class="accent.iconWrap"
       >
-        <!-- Traumatology: bone -->
         <svg
           v-if="specialty.icon === 'trauma'"
           class="h-7 w-7"
@@ -114,7 +102,6 @@ const difficultyClass = computed(
           <path d="m14 7 3 3" />
           <path d="m7 14 3 3" />
         </svg>
-        <!-- Cardiology: heart pulse -->
         <svg
           v-else-if="specialty.icon === 'cardiology'"
           class="h-7 w-7"
@@ -130,7 +117,6 @@ const difficultyClass = computed(
           />
           <path d="M5 14.5 11 21l6-6.5" />
         </svg>
-        <!-- Emergency: cross / plus -->
         <svg
           v-else
           class="h-7 w-7"
@@ -166,7 +152,6 @@ const difficultyClass = computed(
       {{ specialty.description }}
     </p>
 
-    <!-- Topic chips -->
     <ul class="relative mt-4 flex flex-wrap gap-1.5">
       <li
         v-for="topic in specialty.topics"
@@ -178,7 +163,6 @@ const difficultyClass = computed(
       </li>
     </ul>
 
-    <!-- Duration -->
     <div
       class="relative mt-4 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400"
     >
@@ -197,7 +181,6 @@ const difficultyClass = computed(
       Estimated {{ specialty.duration }}
     </div>
 
-    <!-- Start session -->
     <button
       type="button"
       class="relative mt-auto flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.99] dark:focus-visible:ring-offset-slate-900"

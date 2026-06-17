@@ -3,11 +3,6 @@ import { extractErrorMessage } from '@/api/axios'
 import { userService } from '@/api/user.service'
 import type { GetUserResponseDto } from '@/types/user.types'
 
-/**
- * Loads and exposes the current user (`GET /users`). Kept as a lightweight
- * composable rather than a store since the dashboard is the only consumer for
- * now; promote to Pinia if other views need the same data.
- */
 export function useUser() {
   const user = ref<GetUserResponseDto | null>(null)
   const isLoading = ref(false)

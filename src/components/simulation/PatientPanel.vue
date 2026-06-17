@@ -1,14 +1,4 @@
 <script setup lang="ts">
-/**
- * Right-hand patient panel. Mirrors the session lifecycle:
- *   generating → animated "generating patient" loader
- *   active     → patient profile + live vitals from `session:start`
- *   ended      → session-ended summary
- *   error      → failure message with a retry hint
- *
- * The patient's `condition` (the diagnosis target) and evaluation fields are
- * intentionally not shown here; the trainee has to reach the diagnosis.
- */
 import { computed } from 'vue'
 import ScoreEvaluation from './ScoreEvaluation.vue'
 import type { PatientProfile, SessionPhase } from '@/types/chat.types'
@@ -19,7 +9,6 @@ const props = defineProps<{
   specialtyTitle: string
   accent: SpecialtyAccent
   patient?: PatientProfile | null
-  /** Live evaluation, surfaced via ScoreEvaluation at the top of the panel. */
   score?: number | null
   scoreDelta?: number | null
   scoreHistory?: number[]
@@ -29,7 +18,6 @@ const props = defineProps<{
 
 defineEmits<{ retry: []; exit: [] }>()
 
-/** The four live vitals shown in the grid, derived from the patient data. */
 const vitalCards = computed(() => {
   const v = props.patient
   return [
@@ -40,7 +28,6 @@ const vitalCards = computed(() => {
   ]
 })
 
-/** "42 · Male" style subtitle under the patient name. */
 const demographics = computed(() => {
   const v = props.patient
   if (!v) return ''
@@ -49,7 +36,6 @@ const demographics = computed(() => {
     .join(' · ')
 })
 
-/** Colour the status dot by how stable the patient reads. */
 const statusTone = computed(() => {
   const s = (props.patient?.patientStatus ?? '').toLowerCase()
   if (/(critical|unstable|severe)/.test(s))
@@ -71,7 +57,6 @@ const statusDot = computed(() => {
   <aside
     class="flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/70 p-5 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/60"
   >
-    <!-- Generating loader -->
     <div
       v-if="phase === 'connecting' || phase === 'generating'"
       class="flex flex-1 flex-col items-center justify-center text-center"
@@ -112,7 +97,6 @@ const statusDot = computed(() => {
       </p>
     </div>
 
-    <!-- Error -->
     <div
       v-else-if="phase === 'error'"
       class="flex flex-1 flex-col items-center justify-center text-center"
@@ -151,7 +135,6 @@ const statusDot = computed(() => {
       </button>
     </div>
 
-    <!-- Ended -->
     <div
       v-else-if="phase === 'ended'"
       class="flex flex-1 flex-col items-center justify-center text-center"
@@ -187,9 +170,7 @@ const statusDot = computed(() => {
       </button>
     </div>
 
-    <!-- Active patient card -->
     <div v-else class="flex flex-1 flex-col gap-4 overflow-y-auto">
-      <!-- Live evaluation (chess-eval style) -->
       <ScoreEvaluation
         :score="score ?? null"
         :delta="scoreDelta ?? null"
@@ -227,7 +208,6 @@ const statusDot = computed(() => {
         </div>
       </div>
 
-      <!-- Status -->
       <p
         v-if="patient?.patientStatus"
         class="-mt-1 flex items-center gap-1.5 text-xs font-medium"
@@ -265,7 +245,6 @@ const statusDot = computed(() => {
         </div>
       </div>
 
-      <!-- Profile details -->
       <dl
         v-if="patient"
         class="space-y-2 rounded-xl border border-slate-200 bg-white p-3 text-xs dark:border-slate-700 dark:bg-slate-800/60"

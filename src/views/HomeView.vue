@@ -1,11 +1,4 @@
 <script setup lang="ts">
-/**
- * LifeGem dashboard, the authenticated landing page (protected `/` route).
- *
- * Assembles the dashboard shell from focused components and feeds them static
- * demo data from `@/data/dashboard` while the backend is still in progress.
- * Auth wiring is left as-is: logout flows through the existing `useAuth`.
- */
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
@@ -27,12 +20,8 @@ const statsLoading = computed(() => !user.value && !userError.value)
 
 onMounted(fetchUser)
 
-// First name only for the hero greeting; falls back to a neutral label while
-// the request is in flight or if it fails.
 const firstName = computed(() => user.value?.name ?? 'Doctor')
 
-// Nav profile derived from the live user. Role is unknown from the API, so it
-// is intentionally omitted (the nav hides it when absent).
 const navUser = computed<DashboardUser>(() => {
   const u = user.value
   const name = u ? `${u.name} ${u.surname}` : 'Loading…'
@@ -42,8 +31,6 @@ const navUser = computed<DashboardUser>(() => {
   return { name, initials }
 })
 
-// Performance cards mapped from the API metrics. Null metrics (no sessions yet)
-// flow through as null and StatCard renders a "No sessions yet" placeholder.
 const stats = computed<DashboardStat[]>(() => {
   const u = user.value
   return [
@@ -77,8 +64,6 @@ const stats = computed<DashboardStat[]>(() => {
   ]
 })
 
-// Enter the live simulation for the chosen specialty. The view opens the
-// WebSocket session (connect → start_session → chat) on mount.
 function startSession(specialtyId: string): void {
   void router.push({ name: 'simulation', params: { specialty: specialtyId } })
 }
@@ -93,7 +78,6 @@ function startSession(specialtyId: string): void {
     >
       <WelcomeHero :name="firstName" />
 
-      <!-- Specialty selection: primary call-to-action -->
       <section>
         <div class="mb-4 flex items-end justify-between gap-3">
           <div>
@@ -118,7 +102,6 @@ function startSession(specialtyId: string): void {
         </div>
       </section>
 
-      <!-- Analytics + history -->
       <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <section class="lg:col-span-2">
           <div class="mb-4">

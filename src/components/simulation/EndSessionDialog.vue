@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * Confirmation shown when the trainee tries to end a live session without a
- * saved final diagnosis. They can go back and record one, or end anyway (an
- * empty diagnosis is allowed). Rendered via Teleport so it overlays the app.
- */
 defineProps<{ open: boolean }>()
 
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
@@ -25,13 +20,11 @@ function onKeydown(e: KeyboardEvent): void {
         tabindex="-1"
         @keydown="onKeydown"
       >
-        <!-- Backdrop -->
         <div
           class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
           @click="emit('cancel')"
         />
 
-        <!-- Card -->
         <div
           class="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
         >

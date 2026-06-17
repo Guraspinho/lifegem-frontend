@@ -1,15 +1,5 @@
-/**
- * Static simulation data. Quick actions are one-tap clinical prompts shown above
- * the chat composer so the trainee can drive a consultation without typing the
- * common openers. The `prompt` is sent verbatim as a doctor `chat_message`.
- */
 import type { QuickAction, SessionSpecialty } from '@/types/chat.types'
 
-/**
- * Maps a dashboard specialty id (see `@/data/dashboard`) to the backend
- * `SessionSpecialtyEnum` value sent in the `start_session` event. Kept here so
- * the mapping lives next to the simulation transport concerns.
- */
 export const sessionSpecialtyById: Record<string, SessionSpecialty> = {
   traumatology: 'TRAUMATOLOGY',
   cardiology: 'CARDIOLOGY',

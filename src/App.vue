@@ -11,7 +11,6 @@ import { RouterView } from 'vue-router'
 </template>
 
 <style>
-/* Page transition between routes. */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
